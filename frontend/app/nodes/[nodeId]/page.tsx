@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 export default function NodeDetailPage() {
   const { nodeId } = useParams();
   const router = useRouter();
-  
+
   const [node, setNode] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +54,7 @@ export default function NodeDetailPage() {
         </div>
         <h2 className="mb-4 text-xl font-bold text-white">Error</h2>
         <p className="mb-6 text-slate-400">{error || 'Node not found'}</p>
-        <Link 
+        <Link
           href="/"
           className="rounded-lg bg-blue-600 px-6 py-2 text-white transition-colors hover:bg-blue-500"
         >
@@ -82,27 +82,28 @@ export default function NodeDetailPage() {
       <div className="mx-auto max-w-5xl space-y-8">
         {/* Header */}
         <div>
-          <Link 
+          <Link
             href="/"
             className="mb-6 inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
           >
             <ArrowLeft size={16} />
             Back to Dashboard
           </Link>
-          
+
+
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="flex items-center gap-3 text-3xl font-bold text-white">
                 <Server className="text-blue-500" />
                 Node Details
               </h1>
-              <p className="mt-2 font-mono text-slate-400">{node.nodeId}</p>
+              <p className="mt-2 font-mono text-slate-400">{node.node_id}</p>
             </div>
-            
+
             <div className={cn(
               "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium border",
-              node.status === 'online' 
-                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" 
+              node.status === 'online'
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
                 : "border-red-500/30 bg-red-500/10 text-red-400"
             )}>
               {node.status === 'online' ? <ShieldCheck size={16} /> : <AlertCircle size={16} />}
@@ -113,37 +114,37 @@ export default function NodeDetailPage() {
 
         {/* Details Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <DetailItem 
-            icon={Wifi} 
-            label="Network Address" 
-            value={node.address} 
+          <DetailItem
+            icon={Wifi}
+            label="Network Address"
+            value={node.address}
             subValue={node.is_public ? 'Public Access Enabled' : 'Private Access'}
           />
-          <DetailItem 
-            icon={Activity} 
-            label="RPC Port" 
-            value={node.rpc_port} 
+          <DetailItem
+            icon={Activity}
+            label="RPC Port"
+            value={node.rpc_port}
           />
-          <DetailItem 
-            icon={Database} 
-            label="Software Version" 
-            value={node.version} 
+          <DetailItem
+            icon={Database}
+            label="Software Version"
+            value={node.version}
           />
-          <DetailItem 
-            icon={HardDrive} 
-            label="Storage Used" 
-            value={`${(node.storage_used / 1024 / 1024 / 1024).toFixed(2)} GB`}
-            subValue={`${node.storage_usage_percent}% of committed`}
+          <DetailItem
+            icon={HardDrive}
+            label="Storage Used"
+            value={`${(node.current_metrics.storage_used / 1024 / 1024 / 1024).toFixed(2)} GB`}
+            subValue={`${node.current_metrics.storage_usage_percent.toFixed(4)}% of committed`}
           />
-          <DetailItem 
-            icon={Clock} 
-            label="Uptime" 
-            value={`${(node.uptime / 3600).toFixed(1)} hrs`} 
+          <DetailItem
+            icon={Clock}
+            label="Uptime"
+            value={`${(node.current_metrics.uptime_seconds / 3600).toFixed(1)} hrs`}
           />
-          <DetailItem 
-            icon={Clock} 
-            label="Last Seen" 
-            value={new Date(node.last_metric_timestamp || node.last_seen_timestamp).toLocaleString()} 
+          <DetailItem
+            icon={Clock}
+            label="Last Seen"
+            value={new Date(node.last_seen_at).toLocaleString()}
           />
         </div>
 
@@ -166,23 +167,23 @@ export default function NodeDetailPage() {
                 {history.map((record: any, index: number) => (
                   <tr key={index} className="hover:bg-slate-800/30">
                     <td className="px-6 py-4 font-mono">
-                      {new Date(record.createdAt).toLocaleString()}
+                      {new Date(record.timestamp).toLocaleString()}
                     </td>
                     <td className="px-6 py-4">
                       <span className={cn(
                         "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium",
-                        record.status === 'online' 
-                          ? "bg-emerald-500/10 text-emerald-400" 
+                        record.status === 'online'
+                          ? "bg-emerald-500/10 text-emerald-400"
                           : "bg-red-500/10 text-red-400"
                       )}>
                         {record.status}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      {record.storage_usage_percent}%
+                      {record.storage?.usage_percent?.toFixed(4)}%
                     </td>
                     <td className="px-6 py-4">
-                      {(record.uptime / 3600).toFixed(1)}h
+                      {(record.system?.uptime_seconds / 3600).toFixed(1)}h
                     </td>
                   </tr>
                 ))}

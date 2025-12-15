@@ -2,15 +2,19 @@
 
 import { useEffect, useState } from 'react';
 import { Activity, Database, HardDrive, Server } from 'lucide-react';
-import { fetchNetworkInfo, fetchPNodes, fetchSystemStatus } from '@/lib/api';
+import { fetchEvents, fetchNetworkInfo, fetchPNodes, fetchProviders, fetchSystemStatus } from '@/lib/api';
 import { StatsCard } from '@/components/StatsCard';
 import { NodeList } from '@/components/NodeList';
+import { EventsFeed } from '@/components/EventsFeed';
+import { ProviderList } from '@/components/ProviderList';
 import { SystemStatusBadge } from '@/components/SystemStatusBadge';
 
 interface DashboardData {
   nodes: any[];
   network: any;
   systemStatus: any;
+  events: any[];
+  providers: any[];
 }
 
 export default function Home() {
@@ -20,12 +24,14 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      const [nodes, network, systemStatus] = await Promise.all([
+      const [nodes, network, systemStatus, events, providers] = await Promise.all([
         fetchPNodes(),
         fetchNetworkInfo(),
         fetchSystemStatus(),
+        fetchEvents(20),
+        fetchProviders(),
       ]);
-      setData({ nodes, network, systemStatus });
+      setData({ nodes, network, systemStatus, events, providers });
       setError(null);
     } catch (err: any) {
       console.error('Failed to fetch data', err);
@@ -61,7 +67,7 @@ export default function Home() {
           </div>
           <h2 className="mb-2 text-xl font-semibold text-white">Connection Error</h2>
           <p className="mb-6 text-slate-400">{error}. Please ensure the backend server is running on port 3001.</p>
-          <button 
+          <button
             onClick={() => { setLoading(true); fetchData(); }}
             className="rounded-lg bg-blue-600 px-6 py-2 font-medium text-white transition-colors hover:bg-blue-500"
           >
@@ -75,7 +81,7 @@ export default function Home() {
   if (!data) return null;
 
   const activeNodes = data.nodes.filter((n: any) => n.status === 'online').length;
-  
+
   return (
     <main className="min-h-screen p-6 md:p-12">
       <div className="mx-auto max-w-7xl space-y-12">
@@ -87,45 +93,51 @@ export default function Home() {
             </h1>
             <p className="mt-2 text-slate-400">Real-time Network Explorer & Monitor</p>
           </div>
-          
-          <SystemStatusBadge 
+
+          <SystemStatusBadge
             status={data.systemStatus?.sync_status || 'success'}
-            lastUpdated={data.systemStatus ? new Date(data.systemStatus.last_sync_timestamp).toLocaleTimeString() : '-'}
+            lastUpdated={data.systemStatus?.last_sync_timestamp ? new Date(data.systemStatus.last_sync_timestamp).toLocaleTimeString() : '-'}
             message={data.systemStatus?.last_error_message}
           />
         </header>
 
         {/* Stats Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <StatsCard 
-            label="Total Nodes" 
-            value={data.nodes.length} 
-            icon={Server} 
-            color="blue" 
+          <StatsCard
+            label="Total Nodes"
+            value={data.nodes.length}
+            icon={Server}
+            color="blue"
           />
-          <StatsCard 
-            label="Active Nodes" 
-            value={activeNodes} 
-            icon={Activity} 
-            color="green" 
+          <StatsCard
+            label="Active Nodes"
+            value={activeNodes}
+            icon={Activity}
+            color="green"
           />
-          <StatsCard 
-            label="Network Version" 
-            value={data.network?.version?.['solana-core']?.split('-')[0] || 'Unknown'} 
-            icon={Database} 
-            color="purple" 
+          <StatsCard
+            label="Total Providers"
+            value={data.providers.length}
+            icon={Database}
+            color="purple"
           />
-          <StatsCard 
-            label="Health Status" 
-            value={data.network?.health?.healthy ? 'Healthy' : 'Unhealthy'} 
-            icon={HardDrive} 
-            color="orange" 
+          <StatsCard
+            label="Recent Events"
+            value={data.events.length}
+            icon={HardDrive}
+            color="orange"
           />
+        </div>
+
+        {/* Analytics Grid */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <EventsFeed events={data.events} />
+          <ProviderList providers={data.providers} />
         </div>
 
         {/* Node List */}
         <NodeList nodes={data.nodes} />
-        
+
         {/* Footer */}
         <footer className="mt-20 border-t border-slate-800 pt-8 text-center text-sm text-slate-500">
           <p>© 2025 Xandeum Analytics. Connected to {data.network?.rpcEndpoint}</p>

@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface Node {
-  nodeId: string;
+  node_id: string; // Changed from nodeId to match backend API
   address: string;
   status: string;
   version: string;
@@ -20,8 +20,8 @@ interface NodeListProps {
 export function NodeList({ nodes }: NodeListProps) {
   const [search, setSearch] = useState('');
 
-  const filteredNodes = nodes.filter(node => 
-    node.nodeId.toLowerCase().includes(search.toLowerCase()) ||
+  const filteredNodes = nodes.filter(node =>
+    node.node_id.toLowerCase().includes(search.toLowerCase()) ||
     node.address.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -49,7 +49,7 @@ export function NodeList({ nodes }: NodeListProps) {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filteredNodes.map((node, index) => (
-          <Link href={`/nodes/${node.nodeId}`} key={node.nodeId} className="block">
+          <Link href={`/nodes/${node.node_id}`} key={node.node_id} className="block">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -57,18 +57,18 @@ export function NodeList({ nodes }: NodeListProps) {
               className="group relative h-full cursor-pointer overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50 p-5 backdrop-blur-sm transition-all hover:border-blue-500/50 hover:bg-slate-800/50"
             >
               <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-              
+
               <div className="mb-4 flex items-start justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs font-medium text-blue-400">
-                      {node.nodeId.slice(0, 8)}...{node.nodeId.slice(-8)}
+                      {node.node_id.slice(0, 8)}...{node.node_id.slice(-8)}
                     </span>
                   </div>
                   <div className={cn(
                     "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium",
-                    node.status === 'online' 
-                      ? "bg-emerald-500/10 text-emerald-400" 
+                    node.status === 'online'
+                      ? "bg-emerald-500/10 text-emerald-400"
                       : "bg-red-500/10 text-red-400"
                   )}>
                     {node.status === 'online' ? <ShieldCheck size={12} /> : <AlertCircle size={12} />}

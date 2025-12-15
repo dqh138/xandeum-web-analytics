@@ -14,7 +14,7 @@ export function SystemStatusBadge({ status, lastUpdated, message }: SystemStatus
         {status === 'syncing' && <RefreshCw className="h-4 w-4 animate-spin text-blue-400" />}
         {status === 'success' && <CheckCircle className="h-4 w-4 text-emerald-400" />}
         {status === 'error' && <AlertOctagon className="h-4 w-4 text-red-400" />}
-        
+
         <span className={cn(
           "text-xs font-medium",
           status === 'syncing' && "text-blue-400",
@@ -24,11 +24,11 @@ export function SystemStatusBadge({ status, lastUpdated, message }: SystemStatus
           {status === 'syncing' ? 'Syncing...' : status === 'success' ? 'System Healthy' : 'System Error'}
         </span>
       </div>
-      
+
       <div className="h-3 w-px bg-slate-800" />
-      
+
       <div className="text-xs text-slate-400">
-        Updated: <span className="text-slate-200">{lastUpdated}</span>
+        Updated: <span className="text-slate-200" suppressHydrationWarning>{lastUpdated}</span>
       </div>
     </div>
   );
