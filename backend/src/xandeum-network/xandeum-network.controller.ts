@@ -41,4 +41,23 @@ export class XandeumNetworkController {
             network: 'devnet',
         };
     }
+
+    /**
+     * GET /network/pnodes
+     * Trả về danh sách pNodes đã đăng ký trên smart contract
+     */
+    @Get('pnodes')
+    async getRegisteredPNodes() {
+        return this.xandeumNetworkService.getRegisteredPNodes();
+    }
+
+    /**
+     * GET /network/pnodes-gossip
+     * Trả về danh sách pNodes từ gossip network với dữ liệu đầy đủ
+     * Bao gồm: IP address, storage metrics, version, uptime
+     */
+    @Get('pnodes-gossip')
+    async getPNodesFromGossip() {
+        return this.xandeumNetworkService.getPNodesFromGossip();
+    }
 }

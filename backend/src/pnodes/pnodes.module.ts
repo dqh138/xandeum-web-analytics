@@ -2,18 +2,32 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PnodesService } from './pnodes.service';
 import { PnodesController } from './pnodes.controller';
-import { PNode, PNodeSchema } from './schemas/pnode.schema';
-import { PNodeMetric, PNodeMetricSchema } from './schemas/pnode-metric.schema';
+
+// New schemas
+import { Node, NodeSchema } from './schemas/node.schema';
+import { MetricTimeseries, MetricTimeseriesSchema } from './schemas/metric-timeseries.schema';
 import { NetworkSnapshot, NetworkSnapshotSchema } from './schemas/network-snapshot.schema';
+import { Event, EventSchema } from './schemas/event.schema';
+import { Provider, ProviderSchema } from './schemas/provider.schema';
+import { Alert, AlertSchema } from './schemas/alert.schema';
+
+// Keep for backward compatibility
 import { SystemStatus, SystemStatusSchema } from './schemas/system-status.schema';
+
 import { XandeumNetworkModule } from '../xandeum-network/xandeum-network.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: PNode.name, schema: PNodeSchema },
-      { name: PNodeMetric.name, schema: PNodeMetricSchema },
+      // New collections
+      { name: Node.name, schema: NodeSchema },
+      { name: MetricTimeseries.name, schema: MetricTimeseriesSchema },
       { name: NetworkSnapshot.name, schema: NetworkSnapshotSchema },
+      { name: Event.name, schema: EventSchema },
+      { name: Provider.name, schema: ProviderSchema },
+      { name: Alert.name, schema: AlertSchema },
+
+      // Backward compatibility
       { name: SystemStatus.name, schema: SystemStatusSchema },
     ]),
     XandeumNetworkModule,
@@ -21,4 +35,5 @@ import { XandeumNetworkModule } from '../xandeum-network/xandeum-network.module'
   controllers: [PnodesController],
   providers: [PnodesService],
 })
-export class PnodesModule {}
+export class PnodesModule { }
+

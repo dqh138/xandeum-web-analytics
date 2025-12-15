@@ -1,18 +1,21 @@
-import { Controller, Get, Post, Body, Param, NotFoundException, Query } from '@nestjs/common';
+import { Controller, Get, Post, Param, NotFoundException, Query } from '@nestjs/common';
 import { PnodesService } from './pnodes.service';
-import { CreatePNodeDto } from './dto/create-pnode.dto';
-import { PNode } from './schemas/pnode.schema';
-import { PNodeMetric } from './schemas/pnode-metric.schema';
+
+// New schemas
+import { Node } from './schemas/node.schema';
+import { MetricTimeseries } from './schemas/metric-timeseries.schema';
 import { NetworkSnapshot } from './schemas/network-snapshot.schema';
+import { Event } from './schemas/event.schema';
+import { Provider } from './schemas/provider.schema';
 import { SystemStatus } from './schemas/system-status.schema';
 
 @Controller('pnodes')
 export class PnodesController {
-  constructor(private readonly pnodesService: PnodesService) {}
+  constructor(private readonly pnodesService: PnodesService) { }
 
   @Post()
-  async create(@Body() createPNodeDto: CreatePNodeDto): Promise<PNode> {
-    return this.pnodesService.create(createPNodeDto);
+  async syncNodes(): Promise<string> {
+    return this.pnodesService.syncNodes();
   }
 
   @Get('system-status')
@@ -20,8 +23,18 @@ export class PnodesController {
     return this.pnodesService.getSystemStatus();
   }
 
+  @Get('events')
+  async getEvents(@Query('limit') limit: number): Promise<Event[]> {
+    return this.pnodesService.getEvents(limit || 100);
+  }
+
+  @Get('providers')
+  async getProviders(): Promise<Provider[]> {
+    return this.pnodesService.getProviders();
+  }
+
   @Get()
-  async findAll(): Promise<PNode[]> {
+  async findAll(): Promise<Node[]> {
     return this.pnodesService.findAll();
   }
 
@@ -31,16 +44,16 @@ export class PnodesController {
   }
 
   @Get(':nodeId')
-  async findOne(@Param('nodeId') nodeId: string): Promise<PNode> {
+  async findOne(@Param('nodeId') nodeId: string): Promise<Node> {
     const node = await this.pnodesService.findOne(nodeId);
     if (!node) {
-      throw new NotFoundException(`PNode with ID ${nodeId} not found`);
+      throw new NotFoundException(`Node with ID ${nodeId} not found`);
     }
     return node;
   }
 
   @Get(':nodeId/history')
-  async getNodeHistory(@Param('nodeId') nodeId: string, @Query('limit') limit: number): Promise<PNodeMetric[]> {
+  async getNodeHistory(@Param('nodeId') nodeId: string, @Query('limit') limit: number): Promise<MetricTimeseries[]> {
     return this.pnodesService.getNodeMetricsHistory(nodeId, limit || 24);
   }
 }
