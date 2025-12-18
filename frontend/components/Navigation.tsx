@@ -2,15 +2,16 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, HardDrive, Activity, Calendar, Building2, Calculator } from 'lucide-react';
+import { Home, HardDrive, Activity, Calendar, Building2, Calculator, List } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
     { href: '/', label: 'Overview', icon: Home },
-    { href: '/storage', label: 'Storage', icon: HardDrive },
-    { href: '/health', label: 'Health', icon: Activity },
-    { href: '/events', label: 'Events', icon: Calendar },
-    { href: '/providers', label: 'Providers', icon: Building2 },
+    // { href: '/storage', label: 'Storage', icon: HardDrive },
+    // { href: '/health', label: 'Health', icon: Activity },
+    // { href: '/events', label: 'Events', icon: Calendar },
+    // { href: '/providers', label: 'Providers', icon: Building2 },
+    { href: '/leaderboard', label: 'Leaderboard', icon: List },
     { href: '/stoinc', label: 'Calculator', icon: Calculator },
 ];
 

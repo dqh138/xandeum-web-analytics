@@ -606,8 +606,36 @@ export class PnodesService implements OnModuleInit {
   }
 
   // API methods for controllers
-  async findAll(): Promise<Node[]> {
-    return this.nodeModel.find().exec();
+  async findAll(): Promise<any[]> {
+    const nodes = await this.nodeModel.find().lean().exec();
+
+    // Calculate max values for normalization
+    const maxStorage = Math.max(...nodes.map(n => n.current_metrics?.storage_committed || 0), 100 * 1024 * 1024 * 1024); // Min benchmark 100GB
+    const maxUptime = Math.max(...nodes.map(n => n.current_metrics?.uptime_seconds || 0), 3600); // Min benchmark 1h
+
+    return nodes.map(node => {
+      const metrics = node.current_metrics || {};
+
+      // 1. Storage Score (50%)
+      const storageScore = Math.min(1, (metrics.storage_committed || 0) / maxStorage);
+
+      // 2. Uptime Score (30%)
+      const uptimeScore = Math.min(1, (metrics.uptime_seconds || 0) / maxUptime);
+
+      // 3. Latency Score (20%) - Lower is better. Baseline 200ms usually good.
+      // If latency is 0 (missing), treat as bad (score 0) or neutral?
+      // Let's assume missing latency = bad.
+      const latency = metrics.latency_ms || 9999;
+      const latencyScore = Math.max(0, 1 - (latency / 500)); // 0ms = 1.0, 500ms = 0.0
+
+      // Total Weighted Score
+      const totalScore = (storageScore * 0.0) + (uptimeScore * 0.5) + (latencyScore * 0.5);
+
+      return {
+        ...node,
+        performance_score: Number(totalScore.toFixed(2))
+      };
+    });
   }
 
   async findOne(nodeId: string): Promise<Node | null> {
