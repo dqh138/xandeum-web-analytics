@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, ShieldCheck, AlertCircle, Medal } from 'lucide-react';
+import { Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, ShieldCheck, AlertCircle, Medal, Star } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useStarredNodes } from '@/hooks/useStarredNodes';
 
 interface Node {
     node_id: string;
@@ -27,6 +28,7 @@ type SortKey = 'node_id' | 'status' | 'version' | 'country' | 'performance_score
 type SortDirection = 'asc' | 'desc';
 
 export function NodeTable({ nodes }: NodeTableProps) {
+    const { starredIds, toggleStar, isStarred } = useStarredNodes();
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'online' | 'offline'>('all');
     const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({
@@ -144,6 +146,9 @@ export function NodeTable({ nodes }: NodeTableProps) {
                     <table className="w-full text-left text-sm text-slate-400">
                         <thead className="bg-slate-950/50 text-xs uppercase text-slate-500">
                             <tr>
+                                <th className="px-6 py-4 font-semibold w-12 text-center">
+                                    <Star size={14} className="mx-auto text-slate-500" />
+                                </th>
                                 <th className="px-6 py-4 font-semibold w-16 text-center">#</th>
                                 <th
                                     className="cursor-pointer px-6 py-4 font-semibold hover:text-slate-300"
@@ -183,6 +188,18 @@ export function NodeTable({ nodes }: NodeTableProps) {
                             {filteredAndSortedNodes.length > 0 ? (
                                 filteredAndSortedNodes.map((node, index) => (
                                     <tr key={node.node_id} className="hover:bg-slate-800/30 transition-colors">
+
+                                        <td className="px-6 py-4 text-center">
+                                            <button
+                                                onClick={() => toggleStar(node.node_id)}
+                                                className="text-slate-500 hover:text-yellow-400 transition-colors"
+                                            >
+                                                <Star
+                                                    size={16}
+                                                    className={cn("mx-auto transition-all", isStarred(node.node_id) ? "fill-yellow-400 text-yellow-400" : "")}
+                                                />
+                                            </button>
+                                        </td>
                                         <td className="px-6 py-4 text-center">
                                             {index === 0 && <Medal className="h-5 w-5 text-yellow-400 mx-auto" />}
                                             {index === 1 && <Medal className="h-5 w-5 text-slate-300 mx-auto" />}

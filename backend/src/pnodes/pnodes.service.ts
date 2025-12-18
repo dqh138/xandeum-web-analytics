@@ -638,8 +638,45 @@ export class PnodesService implements OnModuleInit {
     });
   }
 
-  async findOne(nodeId: string): Promise<Node | null> {
-    return this.nodeModel.findOne({ node_id: nodeId }).exec();
+  async findOne(nodeId: string): Promise<any | null> {
+    const node = await this.nodeModel.findOne({ node_id: nodeId }).lean().exec();
+    if (!node) return null;
+
+    // Fetch network max values for normalization
+    const [maxStorageResult, maxUptimeResult] = await Promise.all([
+      this.nodeModel.find().sort({ 'current_metrics.storage_committed': -1 }).limit(1).select('current_metrics.storage_committed').exec(),
+      this.nodeModel.find().sort({ 'current_metrics.uptime_seconds': -1 }).limit(1).select('current_metrics.uptime_seconds').exec()
+    ]);
+
+    const maxStorage = Math.max(
+      maxStorageResult[0]?.current_metrics?.storage_committed || 0,
+      100 * 1024 * 1024 * 1024 // Min benchmark 100GB
+    );
+
+    const maxUptime = Math.max(
+      maxUptimeResult[0]?.current_metrics?.uptime_seconds || 0,
+      3600 // Min benchmark 1h
+    );
+
+    const metrics = node.current_metrics || {};
+
+    // 1. Storage Score (0% as per user request)
+    const storageScore = Math.min(1, (metrics.storage_committed || 0) / maxStorage);
+
+    // 2. Uptime Score (50%)
+    const uptimeScore = Math.min(1, (metrics.uptime_seconds || 0) / maxUptime);
+
+    // 3. Latency Score (50%) - Lower is better.
+    const latency = metrics.latency_ms || 9999;
+    const latencyScore = Math.max(0, 1 - (latency / 500));
+
+    // Total Weighted Score
+    const totalScore = (storageScore * 0.0) + (uptimeScore * 0.5) + (latencyScore * 0.5);
+
+    return {
+      ...node,
+      performance_score: Number(totalScore.toFixed(2))
+    };
   }
 
   async getSystemStatus(): Promise<SystemStatus | null> {
