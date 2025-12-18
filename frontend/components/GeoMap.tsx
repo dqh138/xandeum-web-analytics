@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 // @ts-ignore
-import { ComposableMap, Geographies, Geography, Marker, Line } from 'react-simple-maps';
+import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
 import { scaleLinear } from 'd3-scale';
 
 interface Node {
@@ -50,24 +50,9 @@ export function GeoMap({ nodes }: GeoMapProps) {
     }, [nodes]);
 
     const maxCount = Math.max(...groupedNodes.map(g => g.count), 1);
-    const sizeScale = scaleLinear().domain([1, maxCount]).range([4, 12]); // Bubble size
+    const sizeScale = scaleLinear().domain([1, maxCount]).range([8, 32]); // Bubble size
 
-    // Create connections between the top hubs for visualization
-    const connections = useMemo(() => {
-        if (groupedNodes.length < 2) return [];
-        const topHubs = groupedNodes.slice(0, Math.min(6, groupedNodes.length));
-        const lines = [];
-        for (let i = 0; i < topHubs.length; i++) {
-            // Connect to the next 2 logical hubs to form a mesh
-            for (let j = i + 1; j < Math.min(i + 3, topHubs.length); j++) {
-                lines.push({
-                    from: [topHubs[i].lng, topHubs[i].lat],
-                    to: [topHubs[j].lng, topHubs[j].lat]
-                });
-            }
-        }
-        return lines;
-    }, [groupedNodes]);
+
 
     const totalCountries = new Set(nodes.map(n => n.geo?.country).filter(Boolean)).size;
     const totalActive = nodes.filter(n => n.status === 'online').length;
@@ -92,11 +77,11 @@ export function GeoMap({ nodes }: GeoMapProps) {
                 </div>
             </div>
 
-            <div className="relative h-[400px] w-full overflow-hidden rounded-lg bg-[#0B1121]">
+            <div className="relative h-[480px] w-full overflow-hidden rounded-lg bg-[#0B1121]">
                 <ComposableMap
                     projection="geoMercator"
                     projectionConfig={{
-                        scale: 110,
+                        scale: 150,
                         center: [0, 20]
                     }}
                     style={{ width: "100%", height: "100%" }}
@@ -112,7 +97,7 @@ export function GeoMap({ nodes }: GeoMapProps) {
                                     strokeWidth={0.5}
                                     style={{
                                         default: { outline: "none" },
-                                        hover: { fill: "#334155", outline: "none" },
+                                        hover: { fill: "#1e293b", outline: "none" },
                                         pressed: { outline: "none" },
                                     }}
                                 />
@@ -121,30 +106,19 @@ export function GeoMap({ nodes }: GeoMapProps) {
                     </Geographies>
 
                     {/* Arcs/Lines */}
-                    {connections.map((conn, i) => (
-                        <Line
-                            key={`conn-${i}`}
-                            from={conn.from}
-                            to={conn.to}
-                            stroke="#10b981"
-                            strokeWidth={1}
-                            strokeOpacity={0.2}
-                            strokeDasharray="4 4"
-                        />
-                    ))}
+
 
                     {/* Node Bubbles */}
                     {groupedNodes.map((group) => (
                         <Marker key={group.id} coordinates={[group.lng, group.lat]}>
                             <circle
                                 r={sizeScale(group.count)}
-                                fill="#64748b"
-                                stroke="#fff"
-                                strokeWidth={1}
-                                className="origin-center transition-all duration-300 hover:fill-emerald-500 hover:scale-110"
+                                stroke="#0f172a"
+                                strokeWidth={0.5}
+                                className="origin-center transition-all duration-300 fill-emerald-500 hover:fill-emerald-400 hover:scale-110"
                             />
                             {/* Inner text for count if > 1 */}
-                            {group.count > 1 && (
+                            {group.count >= 1 && (
                                 <text
                                     textAnchor="middle"
                                     y={sizeScale(group.count) > 8 ? 4 : 3}
@@ -159,19 +133,13 @@ export function GeoMap({ nodes }: GeoMapProps) {
                                     {group.count}
                                 </text>
                             )}
-                            {/* Small green dot if single node */}
-                            {group.count === 1 && (
-                                <circle r={3} fill="#10b981" stroke="none" />
-                            )}
+
                         </Marker>
                     ))}
                 </ComposableMap>
             </div>
 
-            <div className="mt-4 flex justify-between">
-                <div className="px-3 py-1 rounded-md border border-slate-800 text-xs text-slate-400 bg-slate-800/50">
-                    — Connections
-                </div>
+            <div className="mt-4 flex justify-end">
                 <div className="px-3 py-1 rounded-md border border-emerald-900/30 text-xs text-emerald-400 bg-emerald-950/30">
                     ● Active nodes
                 </div>
