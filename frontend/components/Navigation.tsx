@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, HardDrive, Activity, Calendar, Building2 } from 'lucide-react';
+import { Home, HardDrive, Activity, Calendar, Building2, Calculator } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
     { href: '/health', label: 'Health', icon: Activity },
     { href: '/events', label: 'Events', icon: Calendar },
     { href: '/providers', label: 'Providers', icon: Building2 },
+    { href: '/stoinc', label: 'Calculator', icon: Calculator },
 ];
 
 export function Navigation() {
