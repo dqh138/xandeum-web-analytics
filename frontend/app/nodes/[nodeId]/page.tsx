@@ -288,7 +288,7 @@ export default function NodeDetailPage() {
                     contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#f8fafc' }}
                     itemStyle={{ color: '#10b981' }}
                     labelFormatter={(label: string) => new Date(label).toLocaleString()}
-                    formatter={(value: number) => [`${value.toFixed(2)}%`, 'Usage']}
+                    formatter={(value: number | undefined) => [value ? `${value.toFixed(2)}%` : '0.00%', 'Usage']}
                   />
                   <Area
                     type="monotone"
@@ -331,7 +331,7 @@ export default function NodeDetailPage() {
                     contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#f8fafc' }}
                     itemStyle={{ color: '#3b82f6' }}
                     labelFormatter={(label: string) => new Date(label).toLocaleString()}
-                    formatter={(value: number) => [`${(value / 3600).toFixed(2)}h`, 'Uptime']}
+                    formatter={(value: number | undefined) => [value ? `${(value / 3600).toFixed(2)}h` : '0.00h', 'Uptime']}
                   />
                   <Area
                     type="monotone"
