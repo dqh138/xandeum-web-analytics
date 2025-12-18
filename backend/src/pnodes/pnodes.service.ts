@@ -76,6 +76,35 @@ export class PnodesService implements OnModuleInit {
         processedCount++;
       }
 
+      // --- Batch Fetch Geolocation ---
+      // 1. Extract unique IPs (exclude unknown or private IPs if desired)
+      const uniqueIps = Array.from(new Set(
+        pNodes
+          .map((n: any) => n.address ? n.address.split(':')[0] : null)
+          .filter(ip => ip && ip !== 'unknown' && ip !== '127.0.0.1')
+      ));
+
+      if (uniqueIps.length > 0) {
+        this.logger.log(`Fetching Geo data for ${uniqueIps.length} unique IPs...`);
+        const geoMap = await this.xandeumNetworkService.fetchGeoDataBatch(uniqueIps as string[]);
+
+        // 2. Update nodes with Geo data
+        if (Object.keys(geoMap).length > 0) {
+          for (const pNode of pNodes) {
+            const ip = pNode.address ? pNode.address.split(':')[0] : null;
+            if (ip && geoMap[ip]) {
+              const geo = geoMap[ip];
+              // Update the document in MongoDB
+              await this.nodeModel.updateOne(
+                { node_id: (pNode as any).nodeId },
+                { geo: geo }
+              );
+            }
+          }
+          this.logger.log(`✅ Updated Geo data for nodes.`);
+        }
+      }
+
       // Create network snapshot
       await this.createNetworkSnapshot(pNodes as any[], timestamp);
 

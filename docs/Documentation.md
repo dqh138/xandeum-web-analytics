@@ -185,7 +185,7 @@ The database uses **6 specialized collections** optimized for different analytic
     last_updated_at: Date
   },
   
-  // Geographic (optional)
+  // Geographic
   geo: {
     country: string,
     city: string,
