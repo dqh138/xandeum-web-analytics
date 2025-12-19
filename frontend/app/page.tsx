@@ -8,6 +8,7 @@ import { NodeList } from '@/components/NodeList';
 import { EventsFeed } from '@/components/EventsFeed';
 import { ProviderList } from '@/components/ProviderList';
 import { SystemStatusBadge } from '@/components/SystemStatusBadge';
+import { GeoMap } from '@/components/GeoMap';
 
 interface DashboardData {
   nodes: any[];
@@ -128,6 +129,8 @@ export default function Home() {
             color="orange"
           />
         </div>
+
+        <GeoMap nodes={data.nodes} />
 
         {/* Analytics Grid */}
         <div className="grid gap-6 lg:grid-cols-2">

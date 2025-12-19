@@ -11,6 +11,12 @@ interface Node {
   version: string;
   is_public: boolean;
   rpc_port: number;
+  geo?: {
+    country?: string;
+    city?: string;
+    latitude?: number;
+    longitude?: number;
+  };
 }
 
 interface NodeListProps {
@@ -92,6 +98,14 @@ export function NodeList({ nodes }: NodeListProps) {
                     {node.version}
                   </span>
                 </div>
+                {node.geo?.country && (
+                  <div className="flex justify-between">
+                    <span>Location:</span>
+                    <span className="font-mono text-slate-200">
+                      {node.geo?.city ? `${node.geo.city}, ` : ''}{node.geo.country}
+                    </span>
+                  </div>
+                )}
               </div>
             </motion.div>
           </Link>

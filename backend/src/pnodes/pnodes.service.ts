@@ -76,6 +76,35 @@ export class PnodesService implements OnModuleInit {
         processedCount++;
       }
 
+      // --- Batch Fetch Geolocation ---
+      // 1. Extract unique IPs (exclude unknown or private IPs if desired)
+      const uniqueIps = Array.from(new Set(
+        pNodes
+          .map((n: any) => n.address ? n.address.split(':')[0] : null)
+          .filter(ip => ip && ip !== 'unknown' && ip !== '127.0.0.1')
+      ));
+
+      if (uniqueIps.length > 0) {
+        this.logger.log(`Fetching Geo data for ${uniqueIps.length} unique IPs...`);
+        const geoMap = await this.xandeumNetworkService.fetchGeoDataBatch(uniqueIps as string[]);
+
+        // 2. Update nodes with Geo data
+        if (Object.keys(geoMap).length > 0) {
+          for (const pNode of pNodes) {
+            const ip = pNode.address ? pNode.address.split(':')[0] : null;
+            if (ip && geoMap[ip]) {
+              const geo = geoMap[ip];
+              // Update the document in MongoDB
+              await this.nodeModel.updateOne(
+                { node_id: (pNode as any).nodeId },
+                { geo: geo }
+              );
+            }
+          }
+          this.logger.log(`✅ Updated Geo data for nodes.`);
+        }
+      }
+
       // Create network snapshot
       await this.createNetworkSnapshot(pNodes as any[], timestamp);
 
@@ -577,12 +606,77 @@ export class PnodesService implements OnModuleInit {
   }
 
   // API methods for controllers
-  async findAll(): Promise<Node[]> {
-    return this.nodeModel.find().exec();
+  async findAll(): Promise<any[]> {
+    const nodes = await this.nodeModel.find().lean().exec();
+
+    // Calculate max values for normalization
+    const maxStorage = Math.max(...nodes.map(n => n.current_metrics?.storage_committed || 0), 100 * 1024 * 1024 * 1024); // Min benchmark 100GB
+    const maxUptime = Math.max(...nodes.map(n => n.current_metrics?.uptime_seconds || 0), 3600); // Min benchmark 1h
+
+    return nodes.map(node => {
+      const metrics = node.current_metrics || {};
+
+      // 1. Storage Score (50%)
+      const storageScore = Math.min(1, (metrics.storage_committed || 0) / maxStorage);
+
+      // 2. Uptime Score (30%)
+      const uptimeScore = Math.min(1, (metrics.uptime_seconds || 0) / maxUptime);
+
+      // 3. Latency Score (20%) - Lower is better. Baseline 200ms usually good.
+      // If latency is 0 (missing), treat as bad (score 0) or neutral?
+      // Let's assume missing latency = bad.
+      const latency = metrics.latency_ms || 9999;
+      const latencyScore = Math.max(0, 1 - (latency / 500)); // 0ms = 1.0, 500ms = 0.0
+
+      // Total Weighted Score
+      const totalScore = (storageScore * 0.0) + (uptimeScore * 0.5) + (latencyScore * 0.5);
+
+      return {
+        ...node,
+        performance_score: Number(totalScore.toFixed(2))
+      };
+    });
   }
 
-  async findOne(nodeId: string): Promise<Node | null> {
-    return this.nodeModel.findOne({ node_id: nodeId }).exec();
+  async findOne(nodeId: string): Promise<any | null> {
+    const node = await this.nodeModel.findOne({ node_id: nodeId }).lean().exec();
+    if (!node) return null;
+
+    // Fetch network max values for normalization
+    const [maxStorageResult, maxUptimeResult] = await Promise.all([
+      this.nodeModel.find().sort({ 'current_metrics.storage_committed': -1 }).limit(1).select('current_metrics.storage_committed').exec(),
+      this.nodeModel.find().sort({ 'current_metrics.uptime_seconds': -1 }).limit(1).select('current_metrics.uptime_seconds').exec()
+    ]);
+
+    const maxStorage = Math.max(
+      maxStorageResult[0]?.current_metrics?.storage_committed || 0,
+      100 * 1024 * 1024 * 1024 // Min benchmark 100GB
+    );
+
+    const maxUptime = Math.max(
+      maxUptimeResult[0]?.current_metrics?.uptime_seconds || 0,
+      3600 // Min benchmark 1h
+    );
+
+    const metrics = node.current_metrics || {};
+
+    // 1. Storage Score (0% as per user request)
+    const storageScore = Math.min(1, (metrics.storage_committed || 0) / maxStorage);
+
+    // 2. Uptime Score (50%)
+    const uptimeScore = Math.min(1, (metrics.uptime_seconds || 0) / maxUptime);
+
+    // 3. Latency Score (50%) - Lower is better.
+    const latency = metrics.latency_ms || 9999;
+    const latencyScore = Math.max(0, 1 - (latency / 500));
+
+    // Total Weighted Score
+    const totalScore = (storageScore * 0.0) + (uptimeScore * 0.5) + (latencyScore * 0.5);
+
+    return {
+      ...node,
+      performance_score: Number(totalScore.toFixed(2))
+    };
   }
 
   async getSystemStatus(): Promise<SystemStatus | null> {

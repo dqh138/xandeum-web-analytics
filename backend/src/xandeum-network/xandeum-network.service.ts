@@ -455,4 +455,50 @@ export class XandeumNetworkService implements OnModuleInit {
 
     return enrichedNodes;
   }
+
+  /**
+   * fetchGeoDataBatch: Fetch Geolocation data for a batch of IPs using ip-api.com
+   * @param ips Array of IP addresses
+   */
+  async fetchGeoDataBatch(ips: string[]) {
+    if (!ips || ips.length === 0) return {};
+
+    this.logger.log(`Fetching Geo data for ${ips.length} IPs...`);
+    const geoMap: Record<string, any> = {};
+
+    // ip-api.com batch limit is 100
+    const chunkSize = 100;
+    for (let i = 0; i < ips.length; i += chunkSize) {
+      const chunk = ips.slice(i, i + chunkSize);
+
+      try {
+        const response = await axios.post('http://ip-api.com/batch', chunk, {
+          timeout: 10000
+        });
+
+        if (response.data && Array.isArray(response.data)) {
+          response.data.forEach((item: any) => {
+            if (item.status === 'success') {
+              geoMap[item.query] = {
+                country: item.country,
+                city: item.city,
+                latitude: item.lat,
+                longitude: item.lon,
+              };
+            }
+          });
+        }
+
+        // Basic rate limiting (avoid spamming if we have many chunks)
+        if (i + chunkSize < ips.length) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+      } catch (error) {
+        this.logger.error(`Failed to fetch Geo batch: ${error.message}`);
+      }
+    }
+
+    return geoMap;
+  }
 }
