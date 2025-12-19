@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
 import { Model } from 'mongoose';
 import { Telegraf } from 'telegraf';
-import { TelegramConfig, TelegramConfigDocument } from './telegram.schema';
+import { TelegramConfig, TelegramConfigDocument } from './telegram.schema.js';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
@@ -75,7 +75,27 @@ export class TelegramService implements OnModuleInit {
         return {
             connected: !!config,
             username: config?.username,
+            settings: config?.settings || { alertOnInactive: false, alertOnLowScore: false },
+            starredCount: config?.starredNodeIds?.length || 0
         };
+    }
+
+    async updateSettings(settings: { alertOnInactive: boolean; alertOnLowScore: boolean }) {
+        const config = await this.telegramConfigModel.findOne({});
+        if (!config) throw new Error('No Telegram account connected');
+
+        config.settings = { ...config.settings, ...settings };
+        await config.save();
+        return config.settings;
+    }
+
+    async updateStarredNodes(nodeIds: string[]) {
+        const config = await this.telegramConfigModel.findOne({});
+        if (!config) return; // Silent fail if not connected, frontend might sync before connect
+
+        config.starredNodeIds = nodeIds;
+        await config.save();
+        this.logger.debug(`Updated starred nodes for alerts: ${nodeIds.length} nodes`);
     }
 
     async sendTestAlert() {
@@ -83,22 +103,89 @@ export class TelegramService implements OnModuleInit {
         if (!config) {
             throw new Error('No Telegram account connected.');
         }
-        return this.sendAlert('🔔 This is a TEST alert from Xandeum Analytics!');
+        return this.sendAlert('🔔 This is a TEST alert from Xandeum Analytics!', config.chatId);
     }
 
-    async sendAlert(message: string) {
+    // Overload to accept optional chatId, default to stored
+    async sendAlert(message: string, chatId?: string) {
         if (!this.bot) return;
-        const config = await this.telegramConfigModel.findOne({});
-        if (!config) {
-            this.logger.warn('Cannot send alert. No Telegram connected.');
-            return;
+
+        let targetChatId = chatId;
+        if (!targetChatId) {
+            const config = await this.telegramConfigModel.findOne({});
+            if (!config) return;
+            targetChatId = config.chatId;
         }
+
         try {
-            await this.bot.telegram.sendMessage(config.chatId, message);
+            await this.bot.telegram.sendMessage(targetChatId, message, { parse_mode: 'HTML' });
             return { success: true };
         } catch (e) {
             this.logger.error('Failed to send Telegram message', e);
-            throw e;
+            throw e; // Propagate error for manual tests
+        }
+    }
+
+    /**
+     * Core Alert Logic
+     * Called by PnodesService every sync loop
+     */
+    async checkAndSendAlerts(allNodes: any[]) {
+        if (!this.bot) return;
+
+        const config = await this.telegramConfigModel.findOne({});
+        if (!config || !config.starredNodeIds || config.starredNodeIds.length === 0) return;
+
+        const { alertOnInactive, alertOnLowScore } = config.settings || { alertOnInactive: false, alertOnLowScore: false };
+        if (!alertOnInactive && !alertOnLowScore) return;
+
+        const alertState = config.alertState || new Map();
+        let stateChanged = false;
+
+        for (const nodeId of config.starredNodeIds) {
+            const node = allNodes.find(n => n.node_id === nodeId);
+            if (!node) continue;
+
+            const currentState = alertState.get(nodeId) || { lastStatus: 'unknown', lastScore: 100 };
+
+            // 1. Check Inactive
+            this.logger.debug(`Checking Inactive for ${nodeId}: alertOnInactive=${alertOnInactive}, status=${node.status}, lastStatus=${currentState.lastStatus}`);
+            if (alertOnInactive) {
+                const currentStatus = node.status || 'unknown';
+                // Trigger if status changes TO offline/degraded FROM online/unknown
+                const isBad = currentStatus !== 'online';
+                const wasGood = currentState.lastStatus === 'online' || currentState.lastStatus === 'unknown';
+
+                if (isBad && wasGood) {
+                    this.logger.log(`🚨 Triggering Alert for ${nodeId}: Changed from ${currentState.lastStatus} to ${currentStatus}`);
+                    const msg = `⚠️ <b>Node Alert: ${nodeId.slice(0, 8)}...</b>\nStatus is now <b>${currentStatus.toUpperCase()}</b>`;
+                    this.sendAlert(msg, config.chatId).catch(e => this.logger.error(e));
+                }
+                currentState.lastStatus = currentStatus;
+            }
+
+            // 2. Check Low Score
+            if (alertOnLowScore) {
+                const currentScore = node.performance_score || 0;
+                const isLow = currentScore < 50;
+                const wasHigh = currentState.lastScore >= 50;
+
+                if (isLow && wasHigh) {
+                    const msg = `📉 <b>Performance Alert: ${nodeId.slice(0, 8)}...</b>\nScore dropped to <b>${currentScore}</b>`;
+                    this.sendAlert(msg, config.chatId).catch(e => this.logger.error(e));
+                }
+                currentState.lastScore = currentScore;
+            }
+
+            alertState.set(nodeId, currentState);
+            stateChanged = true;
+        }
+
+        if (stateChanged) {
+            config.alertState = alertState;
+            config.markModified('alertState');
+            await config.save();
+            this.logger.debug(`Saved updated alertState for ${config.starredNodeIds.length} nodes`);
         }
     }
 }

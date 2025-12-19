@@ -15,6 +15,7 @@ import { Alert, AlertSchema } from './schemas/alert.schema';
 import { SystemStatus, SystemStatusSchema } from './schemas/system-status.schema';
 
 import { XandeumNetworkModule } from '../xandeum-network/xandeum-network.module';
+import { TelegramModule } from '../telegram/telegram.module.js';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { XandeumNetworkModule } from '../xandeum-network/xandeum-network.module'
       { name: SystemStatus.name, schema: SystemStatusSchema },
     ]),
     XandeumNetworkModule,
+    TelegramModule,
   ],
   controllers: [PnodesController],
   providers: [PnodesService],

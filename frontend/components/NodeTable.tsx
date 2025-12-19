@@ -243,15 +243,15 @@ export function NodeTable({ nodes }: NodeTableProps) {
                                             {(() => {
                                                 const score = node.performance_score || 0;
                                                 let colorClass = "text-red-400";
-                                                if (score > 0.9) colorClass = "text-emerald-400";
-                                                else if (score >= 0.5) colorClass = "text-yellow-400";
+                                                if (score > 90) colorClass = "text-emerald-400";
+                                                else if (score >= 50) colorClass = "text-yellow-400";
 
                                                 return (
                                                     <div className="flex items-center gap-2">
                                                         <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-800">
                                                             <div
-                                                                className={cn("h-full rounded-full transition-all", score > 0.9 ? "bg-emerald-500" : score >= 0.5 ? "bg-yellow-500" : "bg-red-500")}
-                                                                style={{ width: `${score * 100}%` }}
+                                                                className={cn("h-full rounded-full transition-all", score > 90 ? "bg-emerald-500" : score >= 50 ? "bg-yellow-500" : "bg-red-500")}
+                                                                style={{ width: `${score}%` }}
                                                             />
                                                         </div>
                                                         <span className={cn("font-mono font-bold", colorClass)}>

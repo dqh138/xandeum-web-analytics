@@ -138,7 +138,8 @@ class Health {
     timeField: 'timestamp',
     granularity: 'minutes'
   },
-  expireAfterSeconds: 7776000 // 90 days retention
+  expireAfterSeconds: 7776000, // 90 days retention
+  timestamps: { createdAt: true, updatedAt: false }
 })
 export class NetworkSnapshot {
   @Prop({ required: true, type: Date, index: true })

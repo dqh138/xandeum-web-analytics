@@ -14,16 +14,48 @@ export default function AlertsPage() {
     const [loading, setLoading] = useState(false);
     const [testLoading, setTestLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [settings, setSettings] = useState({ alertOnInactive: false, alertOnLowScore: false });
 
     const fetchStatus = async () => {
         try {
             const res = await fetch('/telegram/status');
             const data = await res.json();
             setStatus(data);
+            if (data.settings) {
+                setSettings(data.settings);
+            }
+
+            // Sync starred nodes if connected
+            if (data.connected) {
+                syncStarredNodes();
+            }
         } catch (error) {
             console.error('Failed to fetch status:', error);
         }
     };
+
+    const syncStarredNodes = async () => {
+        try {
+            const stored = localStorage.getItem('xandeum_starred_nodes');
+            const starredIds = stored ? JSON.parse(stored) : [];
+            await fetch('/telegram/starred', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nodeIds: starredIds })
+            });
+        } catch (e) {
+            console.error('Failed to sync starred nodes', e);
+        }
+    }
+
+    // Listen for changes to starred nodes
+    useEffect(() => {
+        const handleStorageUpdate = () => {
+            if (status.connected) syncStarredNodes();
+        };
+        window.addEventListener('starred-nodes-updated', handleStorageUpdate);
+        return () => window.removeEventListener('starred-nodes-updated', handleStorageUpdate);
+    }, [status.connected]);
 
     useEffect(() => {
         fetchStatus();
@@ -62,6 +94,23 @@ export default function AlertsPage() {
             setMessage({ type: 'error', text: 'Error sending test alert.' });
         } finally {
             setTestLoading(false);
+        }
+    };
+
+    const toggleSetting = async (key: 'alertOnInactive' | 'alertOnLowScore') => {
+        const newSettings = { ...settings, [key]: !settings[key] };
+        setSettings(newSettings); // Optimistic UI
+
+        try {
+            await fetch('/telegram/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newSettings)
+            });
+        } catch (e) {
+            console.error('Failed to update settings', e);
+            setMessage({ type: 'error', text: 'Failed to save settings.' });
+            setSettings(settings); // Revert
         }
     };
 
@@ -107,14 +156,59 @@ export default function AlertsPage() {
 
                         <div className="space-y-6">
                             {status.connected ? (
-                                <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10 space-y-2">
-                                    <div className="flex items-center gap-2 text-emerald-400 font-medium">
-                                        <CheckCircle size={18} />
-                                        <span>Active Connection</span>
+                                <div className="space-y-4">
+                                    <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10 space-y-2">
+                                        <div className="flex items-center gap-2 text-emerald-400 font-medium">
+                                            <CheckCircle size={18} />
+                                            <span>Active Connection</span>
+                                        </div>
+                                        <p className="text-sm text-slate-400 ml-6">
+                                            Connected as <span className="text-white font-mono">@{status.username || 'user'}</span>
+                                        </p>
                                     </div>
-                                    <p className="text-sm text-slate-400 ml-6">
-                                        Connected as <span className="text-white font-mono">@{status.username || 'user'}</span>
-                                    </p>
+
+                                    {/* Configuration Toggles */}
+                                    <div className="border-t border-slate-800 pt-4 space-y-3">
+                                        <h4 className="text-sm font-medium text-slate-300">Alert Conditions (Starred Nodes Only)</h4>
+
+                                        <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/30">
+                                            <div className="text-sm">
+                                                <div className="text-slate-200">Node Inactive</div>
+                                                <div className="text-slate-500 text-xs">Alert if node goes offline or degraded</div>
+                                            </div>
+                                            <button
+                                                onClick={() => toggleSetting('alertOnInactive')}
+                                                className={cn(
+                                                    "w-11 h-6 flex items-center rounded-full px-1 transition-colors",
+                                                    settings.alertOnInactive ? "bg-blue-500" : "bg-slate-700"
+                                                )}
+                                            >
+                                                <div className={cn(
+                                                    "w-4 h-4 rounded-full bg-white transition-transform",
+                                                    settings.alertOnInactive ? "translate-x-5" : "translate-x-0"
+                                                )} />
+                                            </button>
+                                        </div>
+
+                                        <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/30">
+                                            <div className="text-sm">
+                                                <div className="text-slate-200">Low Performance Score</div>
+                                                <div className="text-slate-500 text-xs">Alert if score drops below 50</div>
+                                            </div>
+                                            <button
+                                                onClick={() => toggleSetting('alertOnLowScore')}
+                                                className={cn(
+                                                    "w-11 h-6 flex items-center rounded-full px-1 transition-colors",
+                                                    settings.alertOnLowScore ? "bg-blue-500" : "bg-slate-700"
+                                                )}
+                                            >
+                                                <div className={cn(
+                                                    "w-4 h-4 rounded-full bg-white transition-transform",
+                                                    settings.alertOnLowScore ? "translate-x-5" : "translate-x-0"
+                                                )} />
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/10 space-y-2">

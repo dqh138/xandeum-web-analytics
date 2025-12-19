@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { calculatePerformanceScore } from './utils/node-stats.utils';
 import { v4 as uuidv4 } from 'uuid';
 
 // New schemas
@@ -16,6 +17,7 @@ import { Alert, AlertDocument } from './schemas/alert.schema';
 import { SystemStatus, SystemStatusDocument } from './schemas/system-status.schema';
 
 import { XandeumNetworkService } from '../xandeum-network/xandeum-network.service';
+import { TelegramService } from '../telegram/telegram.service';
 
 @Injectable()
 export class PnodesService implements OnModuleInit {
@@ -31,6 +33,7 @@ export class PnodesService implements OnModuleInit {
     @InjectModel(Alert.name) private alertModel: Model<AlertDocument>,
     @InjectModel(SystemStatus.name) private systemStatusModel: Model<SystemStatusDocument>,
     private readonly xandeumNetworkService: XandeumNetworkService,
+    private readonly telegramService: TelegramService,
   ) { }
 
   async onModuleInit() {
@@ -112,7 +115,19 @@ export class PnodesService implements OnModuleInit {
       await this.updateProviders(pNodes as any[]);
 
       // Check alerts (basic implementation)
-      // await this.checkAlerts(pNodes);
+      this.logger.debug('Checking alerts...');
+
+      // Prepare nodes for alert check (calculate score)
+      const maxUptime = Math.max(...pNodes.map(n => n.uptime || 0), 3600);
+      const alertNodes = pNodes.map(pNode => {
+        return {
+          node_id: pNode.nodeId, // Map to snake_case for TelegramService
+          status: pNode.status,
+          performance_score: calculatePerformanceScore(pNode, maxUptime)
+        };
+      });
+
+      await this.telegramService.checkAndSendAlerts(alertNodes);
 
       // Mark as success
       await this.systemStatusModel.updateOne(
@@ -129,7 +144,7 @@ export class PnodesService implements OnModuleInit {
       return `✅ Synced ${processedCount} pNodes`;
 
     } catch (error) {
-      this.logger.error(`Sync failed: ${error.message}`);
+      this.logger.error(`Sync failed: ${error.message} `);
       await this.systemStatusModel.updateOne(
         { id: 'main_status' },
         {
@@ -139,7 +154,7 @@ export class PnodesService implements OnModuleInit {
           last_error_message: error.message
         }
       );
-      return `Sync Failed: ${error.message}`;
+      return `Sync Failed: ${error.message} `;
     }
   }
 
@@ -307,10 +322,10 @@ export class PnodesService implements OnModuleInit {
     if (previous.status !== current.status) {
       await this.createEvent({
         category: 'node',
-        type: `node_${current.status}`,
+        type: `node_${current.status} `,
         severity: current.status === 'offline' ? 'warning' : 'info',
         node_id: nodeId,
-        message: `Node status changed from ${previous.status} to ${current.status}`,
+        message: `Node status changed from ${previous.status} to ${current.status} `,
         old_value: previous.status,
         new_value: current.status
       });
@@ -323,7 +338,7 @@ export class PnodesService implements OnModuleInit {
         type: 'version_upgraded',
         severity: 'info',
         node_id: nodeId,
-        message: `Node upgraded from ${previous.version} to ${current.version}`,
+        message: `Node upgraded from ${previous.version} to ${current.version} `,
         old_value: previous.version,
         new_value: current.version
       });
@@ -336,7 +351,7 @@ export class PnodesService implements OnModuleInit {
         type: 'high_cpu',
         severity: 'warning',
         node_id: nodeId,
-        message: `CPU usage exceeded 80%: ${current.cpu_percent.toFixed(1)}%`,
+        message: `CPU usage exceeded 80 %: ${current.cpu_percent.toFixed(1)}% `,
         new_value: current.cpu_percent
       });
     }
@@ -348,7 +363,7 @@ export class PnodesService implements OnModuleInit {
         type: 'high_ram',
         severity: 'warning',
         node_id: nodeId,
-        message: `RAM usage exceeded 80%: ${current.ram_usage_percent.toFixed(1)}%`,
+        message: `RAM usage exceeded 80 %: ${current.ram_usage_percent.toFixed(1)}% `,
         new_value: current.ram_usage_percent
       });
     }
@@ -361,7 +376,7 @@ export class PnodesService implements OnModuleInit {
         type: 'storage_full',
         severity: 'critical',
         node_id: nodeId,
-        message: `Storage usage exceeded 90%: ${usagePercent.toFixed(1)}%`,
+        message: `Storage usage exceeded 90 %: ${usagePercent.toFixed(1)}% `,
         new_value: usagePercent
       });
     }
@@ -398,7 +413,7 @@ export class PnodesService implements OnModuleInit {
         }
       });
     } catch (error) {
-      this.logger.debug(`Failed to create event: ${error.message}`);
+      this.logger.debug(`Failed to create event: ${error.message} `);
     }
   }
 
@@ -610,30 +625,15 @@ export class PnodesService implements OnModuleInit {
     const nodes = await this.nodeModel.find().lean().exec();
 
     // Calculate max values for normalization
-    const maxStorage = Math.max(...nodes.map(n => n.current_metrics?.storage_committed || 0), 100 * 1024 * 1024 * 1024); // Min benchmark 100GB
     const maxUptime = Math.max(...nodes.map(n => n.current_metrics?.uptime_seconds || 0), 3600); // Min benchmark 1h
 
     return nodes.map(node => {
-      const metrics = node.current_metrics || {};
-
-      // 1. Storage Score (50%)
-      const storageScore = Math.min(1, (metrics.storage_committed || 0) / maxStorage);
-
-      // 2. Uptime Score (30%)
-      const uptimeScore = Math.min(1, (metrics.uptime_seconds || 0) / maxUptime);
-
-      // 3. Latency Score (20%) - Lower is better. Baseline 200ms usually good.
-      // If latency is 0 (missing), treat as bad (score 0) or neutral?
-      // Let's assume missing latency = bad.
-      const latency = metrics.latency_ms || 9999;
-      const latencyScore = Math.max(0, 1 - (latency / 500)); // 0ms = 1.0, 500ms = 0.0
-
-      // Total Weighted Score
-      const totalScore = (storageScore * 0.0) + (uptimeScore * 0.5) + (latencyScore * 0.5);
+      // Create a normalized node object for the utility if needed, or pass directly if shape matches
+      // The utility handles 'current_metrics' inside.
 
       return {
         ...node,
-        performance_score: Number(totalScore.toFixed(2))
+        performance_score: calculatePerformanceScore(node, maxUptime)
       };
     });
   }
@@ -643,39 +643,18 @@ export class PnodesService implements OnModuleInit {
     if (!node) return null;
 
     // Fetch network max values for normalization
-    const [maxStorageResult, maxUptimeResult] = await Promise.all([
-      this.nodeModel.find().sort({ 'current_metrics.storage_committed': -1 }).limit(1).select('current_metrics.storage_committed').exec(),
+    const [maxUptimeResult] = await Promise.all([
       this.nodeModel.find().sort({ 'current_metrics.uptime_seconds': -1 }).limit(1).select('current_metrics.uptime_seconds').exec()
     ]);
-
-    const maxStorage = Math.max(
-      maxStorageResult[0]?.current_metrics?.storage_committed || 0,
-      100 * 1024 * 1024 * 1024 // Min benchmark 100GB
-    );
 
     const maxUptime = Math.max(
       maxUptimeResult[0]?.current_metrics?.uptime_seconds || 0,
       3600 // Min benchmark 1h
     );
 
-    const metrics = node.current_metrics || {};
-
-    // 1. Storage Score (0% as per user request)
-    const storageScore = Math.min(1, (metrics.storage_committed || 0) / maxStorage);
-
-    // 2. Uptime Score (50%)
-    const uptimeScore = Math.min(1, (metrics.uptime_seconds || 0) / maxUptime);
-
-    // 3. Latency Score (50%) - Lower is better.
-    const latency = metrics.latency_ms || 9999;
-    const latencyScore = Math.max(0, 1 - (latency / 500));
-
-    // Total Weighted Score
-    const totalScore = (storageScore * 0.0) + (uptimeScore * 0.5) + (latencyScore * 0.5);
-
     return {
       ...node,
-      performance_score: Number(totalScore.toFixed(2))
+      performance_score: calculatePerformanceScore(node, maxUptime)
     };
   }
 

@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { TelegramController } from './telegram.controller';
-import { TelegramService } from './telegram.service';
-import { TelegramConfig, TelegramConfigSchema } from './telegram.schema';
+import { TelegramController } from './telegram.controller.js';
+import { TelegramService } from './telegram.service.js';
+import { TelegramConfig, TelegramConfigSchema } from './telegram.schema.js';
 
 @Module({
     imports: [
