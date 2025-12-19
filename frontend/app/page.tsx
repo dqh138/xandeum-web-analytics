@@ -8,6 +8,8 @@ import { NodeList } from '@/components/NodeList';
 import { EventsFeed } from '@/components/EventsFeed';
 import { ProviderList } from '@/components/ProviderList';
 import { SystemStatusBadge } from '@/components/SystemStatusBadge';
+import { useSidebar } from '@/context/SidebarContext';
+import { cn } from '@/lib/utils';
 
 interface DashboardData {
   nodes: any[];
@@ -21,6 +23,7 @@ export default function Home() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isCollapsed } = useSidebar();
 
   const fetchData = async () => {
     try {
@@ -31,7 +34,7 @@ export default function Home() {
         fetchEvents(20),
         fetchProviders(),
       ]);
-      setData({ nodes, network, systemStatus, events, providers });
+      setData({ nodes: nodes || [], network, systemStatus, events, providers });
       setError(null);
     } catch (err: any) {
       console.error('Failed to fetch data', err);
@@ -83,7 +86,10 @@ export default function Home() {
   const activeNodes = data.nodes.filter((n: any) => n.status === 'online').length;
 
   return (
-    <main className="min-h-screen p-6 md:p-12">
+    <main className={cn(
+      "min-h-screen p-6 md:p-12 transition-all duration-300",
+      isCollapsed ? "lg:pl-28" : "lg:pl-72"
+    )}>
       <div className="mx-auto max-w-7xl space-y-12">
         {/* Header */}
         <header className="flex flex-col items-center justify-between gap-6 md:flex-row">

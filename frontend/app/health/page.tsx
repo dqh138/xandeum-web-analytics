@@ -9,16 +9,35 @@ export default function HealthDashboard() {
     const [nodes, setNodes] = useState<any[]>([]);
     const [snapshots, setSnapshots] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [timeRange, setTimeRange] = useState<string>('1h');
+
+    // Calculate limit based on time range (assuming 1 snapshot per minute)
+    const getSnapshotLimit = (range: string) => {
+        switch (range) {
+            case '15min': return 15;
+            case '30min': return 30;
+            case '1h': return 60;
+            case '2h': return 120;
+            case '4h': return 240;
+            case '12h': return 720;
+            case '1d': return 1440;
+            case '1w': return 10080;
+            default: return 60;
+        }
+    };
 
     useEffect(() => {
         const loadData = async () => {
             try {
+                const limit = getSnapshotLimit(timeRange);
                 const [nodesData, snapshotsData] = await Promise.all([
                     fetchPNodes(),
-                    fetchNetworkHistory(24),
+                    fetchNetworkHistory(limit),
                 ]);
                 setNodes(nodesData);
-                setSnapshots(snapshotsData.reverse()); // Oldest first for chart
+                // Create a copy before reversing to avoid mutation
+                const reversedSnapshots = [...snapshotsData].reverse();
+                setSnapshots(reversedSnapshots); // Oldest first for chart
             } catch (err) {
                 console.error('Failed to load health data', err);
             } finally {
@@ -28,7 +47,8 @@ export default function HealthDashboard() {
         loadData();
         const interval = setInterval(loadData, 30000);
         return () => clearInterval(interval);
-    }, []);
+    }, [timeRange]); // Re-fetch when timeRange changes
+
 
     if (loading) {
         return (
@@ -177,27 +197,187 @@ export default function HealthDashboard() {
 
                 {/* Health Trend */}
                 <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
-                    <h2 className="mb-6 text-xl font-semibold text-white">Health Score Trend (Last 24 Hours)</h2>
-                    <div className="h-64 flex items-end gap-2">
-                        {snapshots.map((snapshot, index) => {
-                            const score = snapshot.health?.score || 0;
-                            const height = (score / 100) * 100;
-                            return (
-                                <div key={index} className="flex-1 flex flex-col items-center gap-2">
-                                    <div
-                                        className="w-full rounded-t bg-gradient-to-t from-emerald-500 to-blue-500 transition-all hover:opacity-80"
-                                        style={{ height: `${height}%` }}
-                                        title={`Score: ${score.toFixed(1)}`}
-                                    />
-                                    {index % 6 === 0 && (
-                                        <span className="text-xs text-slate-500" suppressHydrationWarning>
-                                            {new Date(snapshot.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                    )}
-                                </div>
-                            );
-                        })}
+                    <div className="mb-6 flex items-center justify-between">
+                        <h2 className="text-xl font-semibold text-white">
+                            Health Score Trend
+                            <span className="ml-3 text-sm font-normal text-slate-500">
+                                {snapshots.length} data points
+                            </span>
+                        </h2>
+
+                        {/* Time Range Selector */}
+                        <div className="flex gap-2">
+                            {[
+                                { value: '15min', label: '15m' },
+                                { value: '30min', label: '30m' },
+                                { value: '1h', label: '1h' },
+                                { value: '2h', label: '2h' },
+                                { value: '4h', label: '4h' },
+                                { value: '12h', label: '12h' },
+                                { value: '1d', label: '1d' },
+                                { value: '1w', label: '1w' },
+                            ].map(({ value, label }) => (
+                                <button
+                                    key={value}
+                                    onClick={() => setTimeRange(value)}
+                                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${timeRange === value
+                                        ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/50'
+                                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+                                        }`}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
+
+                    {snapshots.length === 0 ? (
+                        <div className="flex h-64 items-center justify-center text-slate-500">
+                            <p>No historical data available yet. Data will appear after the first sync.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {/* Area Chart with Y-axis */}
+                            <div className="flex gap-4">
+                                {/* Y-axis labels */}
+                                <div className="flex flex-col justify-between text-xs text-slate-500 pt-2 pb-2">
+                                    <span>100</span>
+                                    <span>80</span>
+                                    <span>60</span>
+                                    <span>40</span>
+                                    <span>20</span>
+                                    <span>0</span>
+                                </div>
+
+                                {/* Chart area */}
+                                <div className="flex-1">
+                                    <div className="relative h-64 rounded-lg border border-slate-700 bg-slate-900/50 p-4">
+                                        <svg className="h-full w-full" viewBox="0 0 1000 240" preserveAspectRatio="none">
+                                            <defs>
+                                                {/* Gradient for area fill */}
+                                                <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                                    <stop offset="0%" stopColor="rgb(16, 185, 129)" stopOpacity="0.4" />
+                                                    <stop offset="100%" stopColor="rgb(59, 130, 246)" stopOpacity="0.1" />
+                                                </linearGradient>
+                                            </defs>
+
+                                            {/* Grid lines */}
+                                            {[0, 20, 40, 60, 80, 100].map(value => {
+                                                const y = 240 - (value / 100) * 240;
+                                                return (
+                                                    <line
+                                                        key={value}
+                                                        x1="0"
+                                                        y1={y}
+                                                        x2="1000"
+                                                        y2={y}
+                                                        stroke="rgb(51, 65, 85)"
+                                                        strokeWidth="1"
+                                                        strokeDasharray="4 4"
+                                                        opacity="0.3"
+                                                    />
+                                                );
+                                            })}
+
+                                            {/* Area path */}
+                                            <path
+                                                d={(() => {
+                                                    const points = snapshots.map((snapshot, index) => {
+                                                        const x = (index / (snapshots.length - 1)) * 1000;
+                                                        const score = snapshot.health?.score || 0;
+                                                        const y = 240 - (score / 100) * 240;
+                                                        return `${x},${y}`;
+                                                    });
+
+                                                    const pathData = `M 0,240 L ${points.join(' L ')} L 1000,240 Z`;
+                                                    return pathData;
+                                                })()}
+                                                fill="url(#areaGradient)"
+                                            />
+
+                                            {/* Line path */}
+                                            <path
+                                                d={(() => {
+                                                    const points = snapshots.map((snapshot, index) => {
+                                                        const x = (index / (snapshots.length - 1)) * 1000;
+                                                        const score = snapshot.health?.score || 0;
+                                                        const y = 240 - (score / 100) * 240;
+                                                        return `${x},${y}`;
+                                                    });
+
+                                                    return `M ${points.join(' L ')}`;
+                                                })()}
+                                                fill="none"
+                                                stroke="rgb(16, 185, 129)"
+                                                strokeWidth="2"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            />
+
+                                            {/* Data points */}
+                                            {snapshots.map((snapshot, index) => {
+                                                const x = (index / (snapshots.length - 1)) * 1000;
+                                                const score = snapshot.health?.score || 0;
+                                                const y = 240 - (score / 100) * 240;
+
+                                                return (
+                                                    <g key={index}>
+                                                        <circle
+                                                            cx={x}
+                                                            cy={y}
+                                                            r="4"
+                                                            fill="rgb(16, 185, 129)"
+                                                            className="hover:r-6 transition-all cursor-pointer"
+                                                        />
+                                                        <title suppressHydrationWarning>
+                                                            Score: {score.toFixed(2)} at {new Date(snapshot.timestamp).toLocaleTimeString()}
+                                                        </title>
+                                                    </g>
+                                                );
+                                            })}
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* X-axis labels */}
+                            <div className="ml-8 flex justify-between text-xs text-slate-500">
+                                {[0, Math.floor(snapshots.length * 0.25), Math.floor(snapshots.length * 0.5), Math.floor(snapshots.length * 0.75), snapshots.length - 1].map(i => (
+                                    <span key={i} suppressHydrationWarning>
+                                        {snapshots[i] ? new Date(snapshots[i].timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                    </span>
+                                ))}
+                            </div>
+
+                            {/* Stats summary */}
+                            <div className="grid grid-cols-4 gap-4 rounded-lg border border-slate-800 bg-slate-800/30 p-4">
+                                <div>
+                                    <div className="text-xs text-slate-500">Current</div>
+                                    <div className="text-lg font-semibold text-white">
+                                        {snapshots[snapshots.length - 1]?.health?.score?.toFixed(1) || 'N/A'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-slate-500">Average</div>
+                                    <div className="text-lg font-semibold text-white">
+                                        {(snapshots.reduce((sum, s) => sum + (s.health?.score || 0), 0) / snapshots.length).toFixed(1)}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-slate-500">Highest</div>
+                                    <div className="text-lg font-semibold text-emerald-400">
+                                        {Math.max(...snapshots.map(s => s.health?.score || 0)).toFixed(1)}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-slate-500">Lowest</div>
+                                    <div className="text-lg font-semibold text-orange-400">
+                                        {Math.min(...snapshots.map(s => s.health?.score || 0)).toFixed(1)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </main>
