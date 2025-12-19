@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, HardDrive, Activity, Calendar, Building2, Calculator, List, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Home, HardDrive, Activity, Calendar, Building2, Calculator, List, Star, ChevronLeft, ChevronRight, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStarredNodes } from '@/hooks/useStarredNodes';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,6 +17,8 @@ const navItems = [
     { href: '/leaderboard', label: 'Leaderboard', icon: List },
     { href: '/starred', label: 'Starred', icon: Star },
     { href: '/stoinc', label: 'Calculator', icon: Calculator },
+    // { href: '/alerts', label: 'Alerts', icon: Link }, // Temporarily disabled if icon import missing, but let's import it
+    { href: '/alerts', label: 'Alerts', icon: Bell },
 ];
 
 export function Navigation() {
