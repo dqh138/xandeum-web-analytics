@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
-import { Search, Server, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Search, Server, ShieldCheck, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -25,11 +25,27 @@ interface NodeListProps {
 
 export function NodeList({ nodes }: NodeListProps) {
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9;
 
-  const filteredNodes = nodes.filter(node =>
+  // Filter only 'online' nodes first, then apply search
+  const onlineNodes = nodes.filter(node => node.status === 'online');
+
+  const filteredNodes = onlineNodes.filter(node =>
     node.node_id.toLowerCase().includes(search.toLowerCase()) ||
     node.address.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredNodes.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedNodes = filteredNodes.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -38,7 +54,7 @@ export function NodeList({ nodes }: NodeListProps) {
           <Server className="text-blue-400" />
           Network Nodes
           <span className="ml-2 rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-400">
-            {nodes.length}
+            {onlineNodes.length} Online
           </span>
         </h2>
         <div className="relative">
@@ -47,14 +63,17 @@ export function NodeList({ nodes }: NodeListProps) {
             type="text"
             placeholder="Search nodes..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1); // Reset to first page on search
+            }}
             className="h-10 w-64 rounded-lg border border-slate-700 bg-slate-800/50 pl-10 pr-4 text-sm text-slate-200 placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredNodes.map((node, index) => (
+        {paginatedNodes.map((node, index) => (
           <Link href={`/nodes/${node.node_id}`} key={node.node_id} className="block">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -112,9 +131,38 @@ export function NodeList({ nodes }: NodeListProps) {
         ))}
       </div>
 
-      {filteredNodes.length === 0 && (
+      {filteredNodes.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-800 p-12 text-center text-slate-500">
-          No nodes found matching your search.
+          No online nodes found matching your search.
+        </div>
+      ) : (
+        <div className="flex items-center justify-between border-t border-slate-800 pt-4">
+          <div className="text-sm text-slate-400">
+            Showing <span className="font-medium text-slate-200">{startIndex + 1}</span> to{' '}
+            <span className="font-medium text-slate-200">
+              {Math.min(startIndex + itemsPerPage, filteredNodes.length)}
+            </span>{' '}
+            of <span className="font-medium text-slate-200">{filteredNodes.length}</span> entries
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="rounded-lg border border-slate-700 p-2 text-slate-400 hover:bg-slate-800 disabled:opacity-50 disabled:hover:bg-transparent"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="text-sm text-slate-400">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="rounded-lg border border-slate-700 p-2 text-slate-400 hover:bg-slate-800 disabled:opacity-50 disabled:hover:bg-transparent"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       )}
     </div>

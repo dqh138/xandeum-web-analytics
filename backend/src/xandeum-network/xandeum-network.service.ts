@@ -412,7 +412,10 @@ export class XandeumNetworkService implements OnModuleInit {
         try {
           // Only try if we have a valid address
           if (!node.address || node.address === 'unknown') {
-            return node;
+            return {
+              ...node,
+              status: 'offline', // No address means we can't reach it
+            };
           }
 
           const startTime = Date.now();
@@ -426,6 +429,8 @@ export class XandeumNetworkService implements OnModuleInit {
 
           return {
             ...node,
+            // Confirm online if we got stats
+            status: 'online',
             // Enrich with detailed stats
             active_streams: stats.active_streams,
             cpu_percent: stats.cpu_percent,
@@ -443,15 +448,20 @@ export class XandeumNetworkService implements OnModuleInit {
             latency,
           };
         } catch (error) {
-          // If getStats fails, return node with basic data
-          this.logger.debug(`Failed to get detailed stats for ${node.nodeId?.substring(0, 8) || 'unknown'}: ${error.message}`);
-          return node;
+          // If getStats fails, mark as offline (in gossip but unreachable)
+          this.logger.debug(`Failed to get detailed stats for ${node.nodeId?.substring(0, 8) || 'unknown'}: ${error.message} -> Marking as OFFLINE`);
+          return {
+            ...node,
+            status: 'offline',
+            // Keep basic stats as 0 or carry over
+            error: error.message
+          };
         }
       })
     );
 
-    const enrichedCount = enrichedNodes.filter(n => (n as any).cpu_percent !== undefined).length;
-    this.logger.log(`✅ Successfully enriched ${enrichedCount}/${pNodes.length} pNodes with detailed stats`);
+    const enrichedCount = enrichedNodes.filter(n => (n as any).status === 'online').length;
+    this.logger.log(`✅ Successfully confirmed ${enrichedCount}/${pNodes.length} pNodes are fully ONLINE`);
 
     return enrichedNodes;
   }
