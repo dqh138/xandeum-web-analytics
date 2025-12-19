@@ -528,7 +528,7 @@ graph TD
 ### Base URL
 ```
 http://localhost:3001
-```
+``` 
 
 ### Endpoints
 

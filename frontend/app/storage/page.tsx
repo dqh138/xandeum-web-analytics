@@ -4,6 +4,11 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, HardDrive, TrendingUp, Database, PieChart } from 'lucide-react';
 import { fetchNetworkHistory, fetchPNodes } from '@/lib/api';
+import { MetricCard } from '@/components/ui/MetricCard';
+import { NoDataState } from '@/components/ui/EmptyState';
+import { MetricCardSkeleton, TableSkeleton } from '@/components/ui/Skeleton';
+import { StorageTrendsChart } from '@/components/StorageTrendsChart';
+import { formatBytes, formatPercentage, safePercentage } from '@/lib/format';
 
 export default function StorageDashboard() {
     const [nodes, setNodes] = useState<any[]>([]);
@@ -17,8 +22,8 @@ export default function StorageDashboard() {
                     fetchPNodes(),
                     fetchNetworkHistory(48), // Last 48 snapshots
                 ]);
-                setNodes(nodesData);
-                setHistory(historyData);
+                setNodes(nodesData || []);
+                setHistory(historyData || []);
             } catch (err) {
                 console.error('Failed to load storage data', err);
             } finally {
@@ -28,20 +33,31 @@ export default function StorageDashboard() {
         loadData();
     }, []);
 
-    if (loading) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-slate-900">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-            </div>
-        );
-    }
-
-    // Calculate storage metrics
+    // Calculate storage metrics safely
     const totalCommitted = nodes.reduce((sum, n) => sum + (n.current_metrics?.storage_committed || 0), 0);
     const totalUsed = nodes.reduce((sum, n) => sum + (n.current_metrics?.storage_used || 0), 0);
-    const avgUsage = nodes.length > 0
-        ? nodes.reduce((sum, n) => sum + (n.current_metrics?.storage_usage_percent || 0), 0) / nodes.length
-        : 0;
+    const avgUsage = safePercentage(
+        nodes.reduce((sum, n) => sum + (n.current_metrics?.storage_usage_percent || 0), 0),
+        nodes.length
+    );
+    const activeNodes = nodes.filter(n => n.status === 'online').length;
+
+    // Calculate trends from history
+    let committedTrend = 0;
+    let usedTrend = 0;
+    if (history.length >= 2) {
+        const sorted = [...history].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        const latest = sorted[sorted.length - 1];
+        const prev = sorted[sorted.length - 2];
+        if (latest && prev) {
+            if (prev.storage?.total_committed > 0) {
+                committedTrend = ((latest.storage.total_committed - prev.storage.total_committed) / prev.storage.total_committed) * 100;
+            }
+            if (prev.storage?.total_used > 0) {
+                usedTrend = ((latest.storage.total_used - prev.storage.total_used) / prev.storage.total_used) * 100;
+            }
+        }
+    }
 
     // Storage distribution
     const storageRanges = {
@@ -84,111 +100,151 @@ export default function StorageDashboard() {
 
                 {/* Overview Stats */}
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
-                        <div className="flex items-center gap-3 text-slate-400">
-                            <Database className="h-5 w-5" />
-                            <span className="text-sm font-medium">Total Committed</span>
-                        </div>
-                        <p className="mt-3 text-3xl font-bold text-white">
-                            {(totalCommitted / 1e12).toFixed(2)} TB
-                        </p>
-                    </div>
+                    {loading ? (
+                        <>
+                            <MetricCardSkeleton />
+                            <MetricCardSkeleton />
+                            <MetricCardSkeleton />
+                            <MetricCardSkeleton />
+                        </>
+                    ) : (
+                        <>
+                            <MetricCard
+                                label="Total Committed"
+                                value={formatBytes(totalCommitted)}
+                                icon={Database}
+                                color="purple"
+                                trend={{ value: committedTrend, label: 'vs last snapshot' }}
+                                isEmpty={totalCommitted === 0}
+                                emptyMessage="No storage committed yet"
+                            />
+                            <MetricCard
+                                label="Total Used"
+                                value={formatBytes(totalUsed)}
+                                icon={HardDrive}
+                                color="blue"
+                                trend={{ value: usedTrend, label: 'vs last snapshot' }}
+                                isEmpty={totalUsed === 0}
+                                emptyMessage="No storage used yet"
+                            />
+                            <MetricCard
+                                label="Average Usage"
+                                value={formatPercentage(avgUsage, { decimals: 2 })}
+                                icon={TrendingUp}
+                                color="green"
+                                isEmpty={avgUsage === 0}
+                                emptyMessage="Calculating..."
+                            />
+                            <MetricCard
+                                label="Active Nodes"
+                                value={activeNodes}
+                                icon={PieChart}
+                                color="emerald"
+                                isEmpty={activeNodes === 0}
+                                emptyMessage="No active nodes"
+                            />
+                        </>
+                    )}
+                </div>
 
-                    <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
-                        <div className="flex items-center gap-3 text-slate-400">
-                            <HardDrive className="h-5 w-5" />
-                            <span className="text-sm font-medium">Total Used</span>
-                        </div>
-                        <p className="mt-3 text-3xl font-bold text-white">
-                            {(totalUsed / 1e9).toFixed(2)} GB
-                        </p>
-                    </div>
-
-                    <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
-                        <div className="flex items-center gap-3 text-slate-400">
-                            <TrendingUp className="h-5 w-5" />
-                            <span className="text-sm font-medium">Average Usage</span>
-                        </div>
-                        <p className="mt-3 text-3xl font-bold text-white">
-                            {avgUsage.toFixed(4)}%
-                        </p>
-                    </div>
-
-                    <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
-                        <div className="flex items-center gap-3 text-slate-400">
-                            <PieChart className="h-5 w-5" />
-                            <span className="text-sm font-medium">Active Nodes</span>
-                        </div>
-                        <p className="mt-3 text-3xl font-bold text-white">
-                            {nodes.filter(n => n.status === 'online').length}
-                        </p>
-                    </div>
+                {/* New: Storage Trends Chart */}
+                <div className="grid gap-6">
+                    <StorageTrendsChart history={history} />
                 </div>
 
                 {/* Storage Distribution */}
                 <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
                     <h2 className="mb-6 text-xl font-semibold text-white">Storage Distribution</h2>
-                    <div className="space-y-4">
-                        {Object.entries(storageRanges).map(([range, count]) => {
-                            const percentage = nodes.length > 0 ? (count / nodes.length) * 100 : 0;
-                            return (
-                                <div key={range}>
-                                    <div className="mb-2 flex items-center justify-between text-sm">
-                                        <span className="text-slate-400">{range}</span>
-                                        <span className="font-medium text-white">{count} nodes ({percentage.toFixed(1)}%)</span>
-                                    </div>
-                                    <div className="h-2 overflow-hidden rounded-full bg-slate-800">
-                                        <div
-                                            className="h-full rounded-full bg-gradient-to-r from-purple-500 to-blue-500"
-                                            style={{ width: `${percentage}%` }}
-                                        />
-                                    </div>
+
+                    {loading ? (
+                        <div className="space-y-4">
+                            {[1, 2, 3, 4].map(i => (
+                                <div key={i} className="space-y-2">
+                                    <div className="h-4 w-32 animate-pulse rounded bg-slate-800" />
+                                    <div className="h-2 w-full animate-pulse rounded bg-slate-800" />
                                 </div>
-                            );
-                        })}
-                    </div>
+                            ))}
+                        </div>
+                    ) : nodes.length === 0 ? (
+                        <NoDataState message="No storage data available yet" />
+                    ) : (
+                        <div className="space-y-4">
+                            {Object.entries(storageRanges).map(([range, count]) => {
+                                const percentage = safePercentage(count, nodes.length);
+                                return (
+                                    <div key={range}>
+                                        <div className="mb-2 flex items-center justify-between text-sm">
+                                            <span className="text-slate-400">{range}</span>
+                                            <span className="font-medium text-white">
+                                                {count} nodes ({formatPercentage(percentage, { decimals: 1 })})
+                                            </span>
+                                        </div>
+                                        <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+                                            <div
+                                                className="h-full rounded-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-500"
+                                                style={{ width: `${percentage}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
 
                 {/* Top Storage Nodes */}
                 <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
                     <h2 className="mb-6 text-xl font-semibold text-white">Top 10 Storage Providers</h2>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="border-b border-slate-800 text-xs uppercase text-slate-500">
-                                <tr>
-                                    <th className="pb-3">Rank</th>
-                                    <th className="pb-3">Node ID</th>
-                                    <th className="pb-3">Committed</th>
-                                    <th className="pb-3">Used</th>
-                                    <th className="pb-3">Usage %</th>
-                                    <th className="pb-3">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-800/50">
-                                {topNodes.map((node, index) => (
-                                    <tr key={node.node_id} className="text-slate-300 hover:bg-slate-800/30">
-                                        <td className="py-3 font-medium text-purple-400">#{index + 1}</td>
-                                        <td className="py-3 font-mono text-xs">
-                                            <Link href={`/nodes/${node.node_id}`} className="hover:text-blue-400">
-                                                {node.node_id.slice(0, 8)}...{node.node_id.slice(-8)}
-                                            </Link>
-                                        </td>
-                                        <td className="py-3">{((node.current_metrics?.storage_committed || 0) / 1e9).toFixed(2)} GB</td>
-                                        <td className="py-3">{((node.current_metrics?.storage_used || 0) / 1e9).toFixed(2)} GB</td>
-                                        <td className="py-3">{(node.current_metrics?.storage_usage_percent || 0).toFixed(4)}%</td>
-                                        <td className="py-3">
-                                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${node.status === 'online'
+
+                    {loading ? (
+                        <TableSkeleton rows={10} columns={6} />
+                    ) : topNodes.length === 0 ? (
+                        <NoDataState message="No nodes with storage data available" />
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm">
+                                <thead className="border-b border-slate-800 text-xs uppercase text-slate-500">
+                                    <tr>
+                                        <th className="pb-3">Rank</th>
+                                        <th className="pb-3">Node ID</th>
+                                        <th className="pb-3">Committed</th>
+                                        <th className="pb-3">Used</th>
+                                        <th className="pb-3">Usage %</th>
+                                        <th className="pb-3">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-800/50">
+                                    {topNodes.map((node, index) => (
+                                        <tr key={node.node_id} className="text-slate-300 transition-colors hover:bg-slate-800/30">
+                                            <td className="py-3 font-medium text-purple-400">#{index + 1}</td>
+                                            <td className="py-3 font-mono text-xs">
+                                                <Link href={`/nodes/${node.node_id}`} className="hover:text-blue-400">
+                                                    {node.node_id.slice(0, 8)}...{node.node_id.slice(-8)}
+                                                </Link>
+                                            </td>
+                                            <td className="py-3">
+                                                {formatBytes(node.current_metrics?.storage_committed)}
+                                            </td>
+                                            <td className="py-3">
+                                                {formatBytes(node.current_metrics?.storage_used)}
+                                            </td>
+                                            <td className="py-3">
+                                                {formatPercentage(node.current_metrics?.storage_usage_percent, { decimals: 2 })}
+                                            </td>
+                                            <td className="py-3">
+                                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${node.status === 'online'
                                                     ? 'bg-emerald-500/10 text-emerald-400'
                                                     : 'bg-red-500/10 text-red-400'
-                                                }`}>
-                                                {node.status}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                                    }`}>
+                                                    {node.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
             </div>
         </main>
