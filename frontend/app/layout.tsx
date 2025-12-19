@@ -5,6 +5,8 @@ import { Navigation } from "@/components/Navigation";
 import { SidebarProvider } from "@/context/SidebarContext";
 import { ToastProvider } from "@/components/ui/Toast";
 
+import { GlobalShortcuts } from "@/components/GlobalShortcuts";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -33,6 +35,7 @@ export default function RootLayout({
       >
         <SidebarProvider>
           <ToastProvider>
+            <GlobalShortcuts />
             {children}
             <Navigation />
           </ToastProvider>

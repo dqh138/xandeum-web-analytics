@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, ShieldCheck, AlertCircle, Medal, Star } from 'lucide-react';
+import { Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, ShieldCheck, AlertCircle, Medal, Star, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/components/ui/Toast';
 import { useStarredNodes } from '@/hooks/useStarredNodes';
 
 interface Node {
@@ -28,9 +29,19 @@ type SortKey = 'node_id' | 'status' | 'version' | 'country' | 'performance_score
 type SortDirection = 'asc' | 'desc';
 
 export function NodeTable({ nodes }: NodeTableProps) {
-    const { starredIds, toggleStar, isStarred } = useStarredNodes();
+    const { toggleStar, isStarred } = useStarredNodes();
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'online' | 'offline'>('all');
+    const [countryFilter, setCountryFilter] = useState<string>('all');
+    const [scoreFilter, setScoreFilter] = useState<string>('all');
+
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 50;
+
+    // Toast
+    const { showToast } = useToast();
+
     const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({
         key: 'performance_score',
         direction: 'desc',
@@ -42,6 +53,22 @@ export function NodeTable({ nodes }: NodeTableProps) {
             direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
         }));
     };
+
+    const handleStar = (id: string) => {
+        const currentlyStarred = isStarred(id);
+        toggleStar(id);
+
+        if (currentlyStarred) {
+            showToast("Node removed from Starred list", "info");
+        } else {
+            showToast("Node added to Starred ⭐", "success");
+        }
+    };
+
+    const uniqueCountries = useMemo(() => {
+        const countries = new Set(nodes.map(n => n.geo?.country).filter(Boolean));
+        return Array.from(countries).sort();
+    }, [nodes]);
 
     const filteredAndSortedNodes = useMemo(() => {
         let result = [...nodes];
@@ -62,7 +89,23 @@ export function NodeTable({ nodes }: NodeTableProps) {
             result = result.filter((node) => node.status === statusFilter);
         }
 
-        // 3. Sort
+        // 3. Filter by Country
+        if (countryFilter !== 'all') {
+            result = result.filter((node) => node.geo?.country === countryFilter);
+        }
+
+        // 4. Filter by Score
+        if (scoreFilter !== 'all') {
+            result = result.filter((node) => {
+                const score = node.performance_score || 0;
+                if (scoreFilter === 'high') return score >= 0.9;
+                if (scoreFilter === 'medium') return score >= 0.5 && score < 0.9;
+                if (scoreFilter === 'low') return score < 0.5;
+                return true;
+            });
+        }
+
+        // 5. Sort
         result.sort((a, b) => {
             let aValue: string | number = '';
             let bValue: string | number = '';
@@ -97,7 +140,17 @@ export function NodeTable({ nodes }: NodeTableProps) {
         });
 
         return result;
-    }, [nodes, search, statusFilter, sortConfig]);
+    }, [nodes, search, statusFilter, countryFilter, scoreFilter, sortConfig]);
+
+    // Pagination Logic
+    const totalPages = Math.ceil(filteredAndSortedNodes.length / itemsPerPage);
+    const paginatedNodes = filteredAndSortedNodes.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    // Reset page when filters change
+    useMemo(() => setCurrentPage(1), [search, statusFilter, countryFilter, scoreFilter]);
 
     const SortIcon = ({ column }: { column: SortKey }) => {
         if (sortConfig.key !== column) return <ArrowUpDown size={14} className="ml-1 text-slate-600" />;
@@ -111,8 +164,10 @@ export function NodeTable({ nodes }: NodeTableProps) {
     return (
         <div className="space-y-4">
             {/* Controls Bar */}
-            <div className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-900/50 p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
-                <div className="relative flex-1 max-w-md">
+            <div className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-900/50 p-4 backdrop-blur-sm">
+
+                {/* Search */}
+                <div className="relative w-full">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                     <input
                         type="text"
@@ -123,20 +178,61 @@ export function NodeTable({ nodes }: NodeTableProps) {
                     />
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <Filter size={16} className="text-slate-400" />
+                {/* Filters */}
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center text-slate-400 text-sm mr-2">
+                        <Filter size={16} className="mr-2" /> Filters:
+                    </div>
+
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value as any)}
-                        className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
+                        className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
                     >
                         <option value="all">All Status</option>
                         <option value="online">Online</option>
                         <option value="offline">Offline</option>
                     </select>
-                    <div className="ml-2 text-xs text-slate-500">
-                        {filteredAndSortedNodes.length} nodes found
-                    </div>
+
+                    <select
+                        value={countryFilter}
+                        onChange={(e) => setCountryFilter(e.target.value)}
+                        className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-slate-200 focus:border-blue-500 focus:outline-none max-w-[150px]"
+                    >
+                        <option value="all">All Countries</option>
+                        {uniqueCountries.map(c => (
+                            <option key={c} value={c}>{c}</option>
+                        ))}
+                    </select>
+
+                    <select
+                        value={scoreFilter}
+                        onChange={(e) => setScoreFilter(e.target.value)}
+                        className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
+                    >
+                        <option value="all">All Scores</option>
+                        <option value="high">High (&gt;0.9)</option>
+                        <option value="medium">Medium (0.5-0.9)</option>
+                        <option value="low">Low (&lt;0.5)</option>
+                    </select>
+
+                    {(statusFilter !== 'all' || countryFilter !== 'all' || scoreFilter !== 'all' || search) && (
+                        <button
+                            onClick={() => {
+                                setSearch('');
+                                setStatusFilter('all');
+                                setCountryFilter('all');
+                                setScoreFilter('all');
+                            }}
+                            className="ml-auto flex items-center gap-1 text-xs text-slate-400 hover:text-white"
+                        >
+                            <X size={12} /> Clear all
+                        </button>
+                    )}
+                </div>
+
+                <div className="text-right text-xs text-slate-500">
+                    Showing {paginatedNodes.length} of {filteredAndSortedNodes.length} nodes
                 </div>
             </div>
 
@@ -185,85 +281,92 @@ export function NodeTable({ nodes }: NodeTableProps) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800/50">
-                            {filteredAndSortedNodes.length > 0 ? (
-                                filteredAndSortedNodes.map((node, index) => (
-                                    <tr key={node.node_id} className="hover:bg-slate-800/30 transition-colors">
+                            {paginatedNodes.length > 0 ? (
+                                paginatedNodes.map((node, index) => {
+                                    // Calculate global rank based on original sorted result if needed, 
+                                    // but usually rank is just current index in sorted list.
+                                    // However, since we paginate, the index is (page-1)*50 + index.
+                                    const globalRank = (currentPage - 1) * itemsPerPage + index + 1;
 
-                                        <td className="px-6 py-4 text-center">
-                                            <button
-                                                onClick={() => toggleStar(node.node_id)}
-                                                className="text-slate-500 hover:text-yellow-400 transition-colors"
-                                            >
-                                                <Star
-                                                    size={16}
-                                                    className={cn("mx-auto transition-all", isStarred(node.node_id) ? "fill-yellow-400 text-yellow-400" : "")}
-                                                />
-                                            </button>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            {index === 0 && <Medal className="h-5 w-5 text-yellow-400 mx-auto" />}
-                                            {index === 1 && <Medal className="h-5 w-5 text-slate-300 mx-auto" />}
-                                            {index === 2 && <Medal className="h-5 w-5 text-amber-600 mx-auto" />}
-                                            {index > 2 && <span className="font-mono text-slate-500">{index + 1}</span>}
-                                        </td>
-                                        <td className="px-6 py-4 font-mono text-slate-200">
-                                            <Link href={`/nodes/${node.node_id}`} className="hover:text-blue-400 hover:underline transition-colors">
-                                                {node.node_id.slice(0, 8)}...{node.node_id.slice(-8)}
-                                            </Link>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className={cn(
-                                                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
-                                                node.status === 'online'
-                                                    ? "bg-emerald-500/10 text-emerald-400"
-                                                    : "bg-red-500/10 text-red-400"
-                                            )}>
-                                                {node.status === 'online' ? <ShieldCheck size={12} /> : <AlertCircle size={12} />}
-                                                {node.status.toUpperCase()}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {(() => {
-                                                const score = node.performance_score || 0;
-                                                let colorClass = "text-red-400";
-                                                if (score > 0.9) colorClass = "text-emerald-400";
-                                                else if (score >= 0.5) colorClass = "text-yellow-400";
+                                    return (
+                                        <tr key={node.node_id} className="hover:bg-slate-800/30 transition-colors">
 
-                                                return (
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-800">
-                                                            <div
-                                                                className={cn("h-full rounded-full transition-all", score > 0.9 ? "bg-emerald-500" : score >= 0.5 ? "bg-yellow-500" : "bg-red-500")}
-                                                                style={{ width: `${score * 100}%` }}
-                                                            />
+                                            <td className="px-6 py-4 text-center">
+                                                <button
+                                                    onClick={() => handleStar(node.node_id)}
+                                                    className="text-slate-500 hover:text-yellow-400 transition-colors"
+                                                >
+                                                    <Star
+                                                        size={16}
+                                                        className={cn("mx-auto transition-all", isStarred(node.node_id) ? "fill-yellow-400 text-yellow-400" : "")}
+                                                    />
+                                                </button>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                {globalRank === 1 && <Medal className="h-5 w-5 text-yellow-400 mx-auto" />}
+                                                {globalRank === 2 && <Medal className="h-5 w-5 text-slate-300 mx-auto" />}
+                                                {globalRank === 3 && <Medal className="h-5 w-5 text-amber-600 mx-auto" />}
+                                                {globalRank > 3 && <span className="font-mono text-slate-500">{globalRank}</span>}
+                                            </td>
+                                            <td className="px-6 py-4 font-mono text-slate-200">
+                                                <Link href={`/nodes/${node.node_id}`} className="hover:text-blue-400 hover:underline transition-colors">
+                                                    {node.node_id.slice(0, 8)}...{node.node_id.slice(-8)}
+                                                </Link>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className={cn(
+                                                    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
+                                                    node.status === 'online'
+                                                        ? "bg-emerald-500/10 text-emerald-400"
+                                                        : "bg-red-500/10 text-red-400"
+                                                )}>
+                                                    {node.status === 'online' ? <ShieldCheck size={12} /> : <AlertCircle size={12} />}
+                                                    {node.status.toUpperCase()}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {(() => {
+                                                    const score = node.performance_score || 0;
+                                                    let colorClass = "text-red-400";
+                                                    if (score > 0.9) colorClass = "text-emerald-400";
+                                                    else if (score >= 0.5) colorClass = "text-yellow-400";
+
+                                                    return (
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-800">
+                                                                <div
+                                                                    className={cn("h-full rounded-full transition-all", score > 0.9 ? "bg-emerald-500" : score >= 0.5 ? "bg-yellow-500" : "bg-red-500")}
+                                                                    style={{ width: `${score * 100}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className={cn("font-mono font-bold", colorClass)}>
+                                                                {score.toFixed(2)}
+                                                            </span>
                                                         </div>
-                                                        <span className={cn("font-mono font-bold", colorClass)}>
-                                                            {score.toFixed(2)}
-                                                        </span>
-                                                    </div>
-                                                );
-                                            })()}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {node.geo?.country || <span className="text-slate-600 italic">Unknown</span>}
-                                            {node.geo?.city && <span className="text-xs text-slate-500 block">{node.geo.city}</span>}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="rounded bg-slate-800 px-2 py-1 font-mono text-xs text-slate-300">
-                                                {node.version}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 font-mono text-xs truncate max-w-[150px]" title={node.address}>
-                                            {node.address}
-                                        </td>
-                                        <td className="px-6 py-4 text-right font-mono text-xs">
-                                            {node.rpc_port}
-                                        </td>
-                                    </tr>
-                                ))
+                                                    );
+                                                })()}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {node.geo?.country || <span className="text-slate-600 italic">Unknown</span>}
+                                                {node.geo?.city && <span className="text-xs text-slate-500 block">{node.geo.city}</span>}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className="rounded bg-slate-800 px-2 py-1 font-mono text-xs text-slate-300">
+                                                    {node.version}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 font-mono text-xs truncate max-w-[150px]" title={node.address}>
+                                                {node.address}
+                                            </td>
+                                            <td className="px-6 py-4 text-right font-mono text-xs">
+                                                {node.rpc_port}
+                                            </td>
+                                        </tr>
+                                    )
+                                })
                             ) : (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                                    <td colSpan={9} className="px-6 py-12 text-center text-slate-500">
                                         No nodes found matching your filters.
                                     </td>
                                 </tr>
@@ -271,7 +374,34 @@ export function NodeTable({ nodes }: NodeTableProps) {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-between border-t border-slate-800 bg-slate-900/30 px-6 py-4">
+                        <div className="text-sm text-slate-500">
+                            Page {currentPage} of {totalPages}
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                                className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-400 hover:bg-slate-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <ChevronLeft size={14} /> Previous
+                            </button>
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                                className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-400 hover:bg-slate-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Next <ChevronRight size={14} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
+
+
         </div>
     );
 }

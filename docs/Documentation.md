@@ -185,7 +185,7 @@ The database uses **6 specialized collections** optimized for different analytic
     last_updated_at: Date
   },
   
-  // Geographic
+  // Geographic (optional)
   geo: {
     country: string,
     city: string,
@@ -528,7 +528,7 @@ graph TD
 ### Base URL
 ```
 http://localhost:3001
-```
+``` 
 
 ### Endpoints
 

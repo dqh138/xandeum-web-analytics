@@ -28,7 +28,10 @@ export function useStarredNodes() {
         setIsLoaded(true);
 
         const handleStorageChange = () => {
-            loadFromStorage();
+            // Avoid "Cannot update a component while rendering a different component"
+            setTimeout(() => {
+                loadFromStorage();
+            }, 0);
         };
 
         window.addEventListener(EVENT_KEY, handleStorageChange);

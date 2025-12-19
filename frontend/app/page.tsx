@@ -1,16 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Activity, Database, HardDrive, Server } from 'lucide-react';
-import { fetchEvents, fetchNetworkInfo, fetchPNodes, fetchProviders, fetchSystemStatus } from '@/lib/api';
-import { StatsCard } from '@/components/StatsCard';
-import { NodeList } from '@/components/NodeList';
-import { EventsFeed } from '@/components/EventsFeed';
-import { ProviderList } from '@/components/ProviderList';
+import { HardDrive } from 'lucide-react';
+import { fetchEvents, fetchNetworkInfo, fetchPNodes, fetchProviders, fetchSystemStatus, fetchNetworkHistory } from '@/lib/api';
 import { SystemStatusBadge } from '@/components/SystemStatusBadge';
+import { NetworkVitalCards } from '@/components/NetworkVitalCards';
+import { StorageCapacityGauge } from '@/components/StorageCapacityGauge';
+import { NetworkGrowthChart } from '@/components/NetworkGrowthChart';
+import { TopPerformersTable } from '@/components/TopPerformersTable';
+import { EventsFeed } from '@/components/EventsFeed';
+import { GeoMap } from '@/components/GeoMap';
 import { useSidebar } from '@/context/SidebarContext';
 import { cn } from '@/lib/utils';
-import { GeoMap } from '@/components/GeoMap';
 
 interface DashboardData {
   nodes: any[];
@@ -18,6 +19,7 @@ interface DashboardData {
   systemStatus: any;
   events: any[];
   providers: any[];
+  history: any[];
 }
 
 export default function Home() {
@@ -28,14 +30,15 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      const [nodes, network, systemStatus, events, providers] = await Promise.all([
+      const [nodes, network, systemStatus, events, providers, history] = await Promise.all([
         fetchPNodes(),
         fetchNetworkInfo(),
         fetchSystemStatus(),
         fetchEvents(20),
         fetchProviders(),
+        fetchNetworkHistory(30), // Fetch 30 snapshots for trend
       ]);
-      setData({ nodes: nodes || [], network, systemStatus, events, providers });
+      setData({ nodes: nodes || [], network, systemStatus, events, providers, history: history || [] });
       setError(null);
     } catch (err: any) {
       console.error('Failed to fetch data', err);
@@ -84,21 +87,50 @@ export default function Home() {
 
   if (!data) return null;
 
-  const activeNodes = data.nodes.filter((n: any) => n.status === 'online').length;
+  // Calculate metrics
+  const onlineNodes = data.nodes.filter((n: any) => n.status === 'online');
+  const totalStorage = onlineNodes.reduce((sum: number, n: any) => sum + (n.current_metrics?.storage_committed || 0), 0);
+  const usedStorage = onlineNodes.reduce((sum: number, n: any) => sum + (n.current_metrics?.storage_used || 0), 0);
+
+  // Parse History for Trends & Vitals
+  let sortedHistory: any[] = [];
+  let latestSnapshot = null;
+  let previousSnapshot = null;
+  let capacityTrend = 0;
+  let usageTrend = 0;
+
+  if (data.history.length > 0) {
+    sortedHistory = [...data.history].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    latestSnapshot = sortedHistory[sortedHistory.length - 1];
+    previousSnapshot = sortedHistory.length > 1 ? sortedHistory[sortedHistory.length - 2] : null;
+
+    if (latestSnapshot && previousSnapshot) {
+      // Capacity Trend
+      if (previousSnapshot.storage?.total_committed > 0) {
+        capacityTrend = ((latestSnapshot.storage.total_committed - previousSnapshot.storage.total_committed) / previousSnapshot.storage.total_committed) * 100;
+      }
+      // Usage Trend
+      const prevUsed = previousSnapshot.storage?.total_used || 0;
+      const curUsed = latestSnapshot.storage?.total_used || 0;
+      if (prevUsed > 0) {
+        usageTrend = ((curUsed - prevUsed) / prevUsed) * 100;
+      }
+    }
+  }
 
   return (
     <main className={cn(
       "min-h-screen p-6 md:p-12 transition-all duration-300",
       isCollapsed ? "lg:pl-28" : "lg:pl-72"
     )}>
-      <div className="mx-auto max-w-7xl space-y-12">
+      <div className="mx-auto max-w-7xl space-y-8">
         {/* Header */}
         <header className="flex flex-col items-center justify-between gap-6 md:flex-row">
           <div>
             <h1 className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-4xl font-bold text-transparent">
-              Xandeum Analytics
+              Network Command Center
             </h1>
-            <p className="mt-2 text-slate-400">Real-time Network Explorer & Monitor</p>
+            <p className="mt-2 text-slate-400">Real-time insights & performance analytics</p>
           </div>
 
           <SystemStatusBadge
@@ -108,48 +140,38 @@ export default function Home() {
           />
         </header>
 
-        {/* Stats Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <StatsCard
-            label="Total Nodes"
-            value={data.nodes.length}
-            icon={Server}
-            color="blue"
+        {/* Vital Signs Row */}
+        <NetworkVitalCards
+          snapshot={latestSnapshot}
+          previousSnapshot={previousSnapshot}
+          loading={!latestSnapshot}
+        />
+
+        {/* Bento Grid Layout - Charts */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Storage Gauge */}
+          <StorageCapacityGauge
+            totalStorage={totalStorage}
+            usedStorage={usedStorage}
+            capacityTrend={capacityTrend}
+            usageTrend={usageTrend}
           />
-          <StatsCard
-            label="Active Nodes"
-            value={activeNodes}
-            icon={Activity}
-            color="green"
-          />
-          <StatsCard
-            label="Total Providers"
-            value={data.providers.length}
-            icon={Database}
-            color="purple"
-          />
-          <StatsCard
-            label="Recent Events"
-            value={data.events.length}
-            icon={HardDrive}
-            color="orange"
-          />
+
+          {/* Growth Chart */}
+          <NetworkGrowthChart history={data.history} />
         </div>
 
-        {/* GeoMap from kienpt */}
+        {/* Middle Section - Performance & Activity */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <TopPerformersTable nodes={data.nodes} limit={5} />
+          <EventsFeed events={data.events} />
+        </div>
+
+        {/* Global Map */}
         <GeoMap nodes={data.nodes} />
 
-        {/* Analytics Grid */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <EventsFeed events={data.events} />
-          <ProviderList providers={data.providers} />
-        </div>
-
-        {/* Node List */}
-        <NodeList nodes={data.nodes} />
-
         {/* Footer */}
-        <footer className="mt-20 border-t border-slate-800 pt-8 text-center text-sm text-slate-500">
+        <footer className="mt-12 border-t border-slate-800 pt-8 text-center text-sm text-slate-500">
           <p>© 2025 Xandeum Analytics. Connected to {data.network?.rpcEndpoint}</p>
         </footer>
       </div>
