@@ -76,7 +76,14 @@ export function Navigation() {
                                 )}
                                 title={isCollapsed ? label : undefined}
                             >
-                                <Icon size={20} className={cn(isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300")} />
+                                <div className="relative">
+                                    <Icon size={20} className={cn(isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300")} />
+                                    {label === 'Starred' && starredIds.length > 0 && (
+                                        <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
+                                            {starredIds.length}
+                                        </span>
+                                    )}
+                                </div>
 
                                 <AnimatePresence>
                                     {!isCollapsed && (
