@@ -10,6 +10,7 @@ import { ProviderList } from '@/components/ProviderList';
 import { SystemStatusBadge } from '@/components/SystemStatusBadge';
 import { useSidebar } from '@/context/SidebarContext';
 import { cn } from '@/lib/utils';
+import { GeoMap } from '@/components/GeoMap';
 
 interface DashboardData {
   nodes: any[];
@@ -134,6 +135,9 @@ export default function Home() {
             color="orange"
           />
         </div>
+
+        {/* GeoMap from kienpt */}
+        <GeoMap nodes={data.nodes} />
 
         {/* Analytics Grid */}
         <div className="grid gap-6 lg:grid-cols-2">

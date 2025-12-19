@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, HardDrive, Activity, Calendar, Building2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Home, HardDrive, Activity, Calendar, Building2, ChevronLeft, ChevronRight, Calculator, List, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebar } from '@/context/SidebarContext';
+import { useStarredNodes } from '@/hooks/useStarredNodes';
 
 const navItems = [
     { href: '/', label: 'Overview', icon: Home },
@@ -13,11 +14,15 @@ const navItems = [
     { href: '/health', label: 'Health', icon: Activity },
     { href: '/events', label: 'Events', icon: Calendar },
     { href: '/providers', label: 'Providers', icon: Building2 },
+    { href: '/leaderboard', label: 'Leaderboard', icon: List },
+    { href: '/starred', label: 'Starred', icon: Star },
+    { href: '/stoinc', label: 'Calculator', icon: Calculator },
 ];
 
 export function Navigation() {
     const pathname = usePathname();
     const { isCollapsed, toggleSidebar } = useSidebar();
+    const { starredIds } = useStarredNodes();
 
     return (
         <motion.nav
@@ -71,7 +76,14 @@ export function Navigation() {
                                 )}
                                 title={isCollapsed ? label : undefined}
                             >
-                                <Icon size={20} className={cn(isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300")} />
+                                <div className="relative">
+                                    <Icon size={20} className={cn(isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300")} />
+                                    {label === 'Starred' && starredIds.length > 0 && (
+                                        <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
+                                            {starredIds.length}
+                                        </span>
+                                    )}
+                                </div>
 
                                 <AnimatePresence>
                                     {!isCollapsed && (
