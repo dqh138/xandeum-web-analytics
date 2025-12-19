@@ -46,13 +46,11 @@ export function GeoMap({ nodes }: GeoMapProps) {
             if (node.status === 'online') groups[key].active++;
         });
 
-        return Object.values(groups).sort((a, b) => b.count - a.count);
+        return Object.values(groups).sort((a, b) => a.count - b.count);
     }, [nodes]);
 
     const maxCount = Math.max(...groupedNodes.map(g => g.count), 1);
     const sizeScale = scaleLinear().domain([1, maxCount]).range([8, 32]); // Bubble size
-
-
 
     const totalCountries = new Set(nodes.map(n => n.geo?.country).filter(Boolean)).size;
     const totalActive = nodes.filter(n => n.status === 'online').length;
@@ -111,6 +109,14 @@ export function GeoMap({ nodes }: GeoMapProps) {
                     {/* Node Bubbles */}
                     {groupedNodes.map((group) => (
                         <Marker key={group.id} coordinates={[group.lng, group.lat]}>
+                            {/* Radar Animation */}
+                            <circle
+                                r={sizeScale(group.count)}
+                                stroke="none"
+                                className="animate-ping opacity-75 fill-emerald-500"
+                                style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+                            />
+
                             <circle
                                 r={sizeScale(group.count)}
                                 stroke="#0f172a"
@@ -118,7 +124,7 @@ export function GeoMap({ nodes }: GeoMapProps) {
                                 className="origin-center transition-all duration-300 fill-emerald-500 hover:fill-emerald-400 hover:scale-110"
                             />
                             {/* Inner text for count if > 1 */}
-                            {group.count >= 1 && (
+                            {group.count > 1 && (
                                 <text
                                     textAnchor="middle"
                                     y={sizeScale(group.count) > 8 ? 4 : 3}

@@ -43,6 +43,16 @@ export function NodeTable({ nodes }: NodeTableProps) {
         }));
     };
 
+    // Pre-calculate ranks based on performance_score
+    const rankMap = useMemo(() => {
+        const sorted = [...nodes].sort((a, b) => (b.performance_score || 0) - (a.performance_score || 0));
+        const map = new Map<string, number>();
+        sorted.forEach((node, index) => {
+            map.set(node.node_id, index + 1);
+        });
+        return map;
+    }, [nodes]);
+
     const filteredAndSortedNodes = useMemo(() => {
         let result = [...nodes];
 
@@ -201,10 +211,17 @@ export function NodeTable({ nodes }: NodeTableProps) {
                                             </button>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            {index === 0 && <Medal className="h-5 w-5 text-yellow-400 mx-auto" />}
-                                            {index === 1 && <Medal className="h-5 w-5 text-slate-300 mx-auto" />}
-                                            {index === 2 && <Medal className="h-5 w-5 text-amber-600 mx-auto" />}
-                                            {index > 2 && <span className="font-mono text-slate-500">{index + 1}</span>}
+                                            {(() => {
+                                                const rank = rankMap.get(node.node_id) || 0;
+                                                return (
+                                                    <>
+                                                        {rank === 1 && <Medal className="h-5 w-5 text-yellow-400 mx-auto" />}
+                                                        {rank === 2 && <Medal className="h-5 w-5 text-slate-300 mx-auto" />}
+                                                        {rank === 3 && <Medal className="h-5 w-5 text-amber-600 mx-auto" />}
+                                                        {rank > 3 && <span className="font-mono text-slate-500">{rank}</span>}
+                                                    </>
+                                                );
+                                            })()}
                                         </td>
                                         <td className="px-6 py-4 font-mono text-slate-200">
                                             <Link href={`/nodes/${node.node_id}`} className="hover:text-blue-400 hover:underline transition-colors">
