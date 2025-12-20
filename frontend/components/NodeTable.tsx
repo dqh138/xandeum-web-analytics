@@ -22,12 +22,13 @@ interface Node {
 
 interface NodeTableProps {
     nodes: Node[];
+    showRankMedals?: boolean;
 }
 
 type SortKey = 'node_id' | 'status' | 'version' | 'country' | 'performance_score';
 type SortDirection = 'asc' | 'desc';
 
-export function NodeTable({ nodes }: NodeTableProps) {
+export function NodeTable({ nodes, showRankMedals = true }: NodeTableProps) {
     const { starredIds, toggleStar, isStarred } = useStarredNodes();
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'online' | 'offline'>('all');
@@ -215,10 +216,10 @@ export function NodeTable({ nodes }: NodeTableProps) {
                                                 const rank = rankMap.get(node.node_id) || 0;
                                                 return (
                                                     <>
-                                                        {rank === 1 && <Medal className="h-5 w-5 text-yellow-400 mx-auto" />}
-                                                        {rank === 2 && <Medal className="h-5 w-5 text-slate-300 mx-auto" />}
-                                                        {rank === 3 && <Medal className="h-5 w-5 text-amber-600 mx-auto" />}
-                                                        {rank > 3 && <span className="font-mono text-slate-500">{rank}</span>}
+                                                        {showRankMedals && rank === 1 && <Medal className="h-5 w-5 text-yellow-400 mx-auto" />}
+                                                        {showRankMedals && rank === 2 && <Medal className="h-5 w-5 text-slate-300 mx-auto" />}
+                                                        {showRankMedals && rank === 3 && <Medal className="h-5 w-5 text-amber-600 mx-auto" />}
+                                                        {(!showRankMedals || rank > 3) && <span className="font-mono text-slate-500">{rank}</span>}
                                                     </>
                                                 );
                                             })()}
