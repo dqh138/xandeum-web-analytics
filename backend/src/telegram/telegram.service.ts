@@ -76,7 +76,8 @@ export class TelegramService implements OnModuleInit {
             connected: !!config,
             username: config?.username,
             settings: config?.settings || { alertOnInactive: false, alertOnLowScore: false },
-            starredCount: config?.starredNodeIds?.length || 0
+            starredCount: config?.starredNodeIds?.length || 0,
+            starredNodeIds: config?.starredNodeIds || []
         };
     }
 

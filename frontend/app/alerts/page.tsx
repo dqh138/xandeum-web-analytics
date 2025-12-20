@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 interface TelegramStatus {
     connected: boolean;
     username?: string;
+    starredNodeIds?: string[];
 }
 
 export default function AlertsPage() {
@@ -15,6 +16,7 @@ export default function AlertsPage() {
     const [testLoading, setTestLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [settings, setSettings] = useState({ alertOnInactive: false, alertOnLowScore: false });
+    const [hasSynced, setHasSynced] = useState(false);
 
     const fetchStatus = async () => {
         try {
@@ -25,16 +27,49 @@ export default function AlertsPage() {
                 setSettings(data.settings);
             }
 
-            // Sync starred nodes if connected
-            if (data.connected) {
-                syncStarredNodes();
+            // Sync starred nodes if connected and haven't synced yet
+            if (data.connected && !hasSynced) {
+                syncWithRemote(data.starredNodeIds || []);
+                setHasSynced(true);
             }
         } catch (error) {
             console.error('Failed to fetch status:', error);
         }
     };
 
-    const syncStarredNodes = async () => {
+    const syncWithRemote = async (remoteIds: string[]) => {
+        try {
+            const stored = localStorage.getItem('xandeum_starred_nodes');
+            const localIds: string[] = stored ? JSON.parse(stored) : [];
+
+            // Merge Logic: Union of Local and Remote
+            const mergedSet = new Set([...localIds, ...remoteIds]);
+            const mergedIds = Array.from(mergedSet);
+
+            // 1. Update Local Storage if different
+            if (mergedIds.length !== localIds.length) {
+                localStorage.setItem('xandeum_starred_nodes', JSON.stringify(mergedIds));
+                // Dispatch event so other components (like Navigation) update immediately
+                window.dispatchEvent(new Event('starred-nodes-updated'));
+            }
+
+            // 2. Update Remote if different (or if we just merged something new from local)
+            // Ideally we only push if local had something that remote didn't.
+            // Simplified: Push if the merged list size is different from remote list size
+            // OR if we just want to ensure consistency.
+            if (mergedIds.length !== remoteIds.length) {
+                await fetch('/telegram/starred', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nodeIds: mergedIds })
+                });
+            }
+        } catch (e) {
+            console.error('Failed to sync starred nodes', e);
+        }
+    }
+
+    const pushLocalToRemote = async () => {
         try {
             const stored = localStorage.getItem('xandeum_starred_nodes');
             const starredIds = stored ? JSON.parse(stored) : [];
@@ -44,18 +79,18 @@ export default function AlertsPage() {
                 body: JSON.stringify({ nodeIds: starredIds })
             });
         } catch (e) {
-            console.error('Failed to sync starred nodes', e);
+            console.error('Failed to push starred nodes to remote', e);
         }
     }
 
-    // Listen for changes to starred nodes
+    // Listen for changes to starred nodes (from other tabs/components)
     useEffect(() => {
         const handleStorageUpdate = () => {
-            if (status.connected) syncStarredNodes();
+            if (status.connected && hasSynced) pushLocalToRemote();
         };
         window.addEventListener('starred-nodes-updated', handleStorageUpdate);
         return () => window.removeEventListener('starred-nodes-updated', handleStorageUpdate);
-    }, [status.connected]);
+    }, [status.connected, hasSynced]);
 
     useEffect(() => {
         fetchStatus();
