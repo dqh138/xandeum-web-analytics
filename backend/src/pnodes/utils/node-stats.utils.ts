@@ -20,9 +20,11 @@ export function calculatePerformanceScore(node: any, maxUptime: number): number 
     // 2. Latency Score (50%)
     const latencyScore = Math.max(0, 1 - (latency / 500)); // 0ms = 1.0, 500ms = 0.0
 
+    console.log(`Uptime Score: ${uptimeScore}, Latency Score: ${latencyScore}`);
+
     // Total Weighted Score (0-1 range)
     const totalScore = (uptimeScore * 0.5) + (latencyScore * 0.5);
 
-    // Return 0-100 formatted string converted to number
-    return Number((totalScore * 100).toFixed(2));
+    // Return 0-1 formatted number
+    return Number(totalScore.toFixed(2));
 }

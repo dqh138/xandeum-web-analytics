@@ -147,7 +147,7 @@ export class TelegramService implements OnModuleInit {
             const node = allNodes.find(n => n.node_id === nodeId);
             if (!node) continue;
 
-            const currentState = alertState.get(nodeId) || { lastStatus: 'unknown', lastScore: 100 };
+            const currentState = alertState.get(nodeId) || { lastStatus: 'unknown', lastScore: 1 };
 
             // 1. Check Inactive
             this.logger.debug(`Checking Inactive for ${nodeId}: alertOnInactive=${alertOnInactive}, status=${node.status}, lastStatus=${currentState.lastStatus}`);
@@ -159,7 +159,7 @@ export class TelegramService implements OnModuleInit {
 
                 if (isBad && wasGood) {
                     this.logger.log(`🚨 Triggering Alert for ${nodeId}: Changed from ${currentState.lastStatus} to ${currentStatus}`);
-                    const msg = `⚠️ <b>Node Alert: ${nodeId.slice(0, 8)}...</b>\nStatus is now <b>${currentStatus.toUpperCase()}</b>`;
+                    const msg = `⚠️ <b>Node Alert: ${nodeId}...</b>\nStatus is now <b>${currentStatus.toUpperCase()}</b>`;
                     this.sendAlert(msg, config.chatId).catch(e => this.logger.error(e));
                 }
                 currentState.lastStatus = currentStatus;
@@ -168,11 +168,11 @@ export class TelegramService implements OnModuleInit {
             // 2. Check Low Score
             if (alertOnLowScore) {
                 const currentScore = node.performance_score || 0;
-                const isLow = currentScore < 50;
-                const wasHigh = currentState.lastScore >= 50;
+                const isLow = currentScore < 0.5;
+                const wasHigh = currentState.lastScore >= 0.5;
 
                 if (isLow && wasHigh) {
-                    const msg = `📉 <b>Performance Alert: ${nodeId.slice(0, 8)}...</b>\nScore dropped to <b>${currentScore}</b>`;
+                    const msg = `📉 <b>Performance Alert: ${nodeId}...</b>\nScore dropped to <b>${currentScore}</b>`;
                     this.sendAlert(msg, config.chatId).catch(e => this.logger.error(e));
                 }
                 currentState.lastScore = currentScore;
