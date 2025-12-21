@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, CheckCircle, AlertTriangle, ExternalLink, Send } from 'lucide-react';
+import { Bell, CheckCircle, AlertTriangle, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TelegramStatus {
@@ -13,7 +13,7 @@ interface TelegramStatus {
 export default function AlertsPage() {
     const [status, setStatus] = useState<TelegramStatus>({ connected: false });
     const [loading, setLoading] = useState(false);
-    const [testLoading, setTestLoading] = useState(false);
+
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [settings, setSettings] = useState({ alertOnInactive: false, alertOnLowScore: false });
     const [hasSynced, setHasSynced] = useState(false);
@@ -115,22 +115,7 @@ export default function AlertsPage() {
         }
     };
 
-    const handleTestAlert = async () => {
-        setTestLoading(true);
-        setMessage(null);
-        try {
-            const res = await fetch('/telegram/test', { method: 'POST' });
-            if (res.ok) {
-                setMessage({ type: 'success', text: 'Test alert sent successfully!' });
-            } else {
-                setMessage({ type: 'error', text: 'Failed to send test alert.' });
-            }
-        } catch (error) {
-            setMessage({ type: 'error', text: 'Error sending test alert.' });
-        } finally {
-            setTestLoading(false);
-        }
-    };
+
 
     const toggleSetting = async (key: 'alertOnInactive' | 'alertOnLowScore') => {
         const newSettings = { ...settings, [key]: !settings[key] };
@@ -257,8 +242,8 @@ export default function AlertsPage() {
                                 </div>
                             )}
 
-                            <div className="flex gap-3 pt-2">
-                                {!status.connected ? (
+                            {!status.connected && (
+                                <div className="flex gap-3 pt-2">
                                     <button
                                         onClick={handleConnect}
                                         disabled={loading}
@@ -267,17 +252,8 @@ export default function AlertsPage() {
                                         <ExternalLink size={18} />
                                         {loading ? 'Connecting...' : 'Connect Telegram'}
                                     </button>
-                                ) : (
-                                    <button
-                                        onClick={handleTestAlert}
-                                        disabled={testLoading}
-                                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium transition-all border border-slate-700 disabled:opacity-50"
-                                    >
-                                        <Send size={18} />
-                                        {testLoading ? 'Sending...' : 'Send Test Alert'}
-                                    </button>
-                                )}
-                            </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
