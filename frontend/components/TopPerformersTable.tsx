@@ -36,7 +36,7 @@ export function TopPerformersTable({ nodes, limit = 5 }: TopPerformersTableProps
         if (score >= 0.9) return 'text-emerald-400 bg-emerald-500/10';
         if (score >= 0.7) return 'text-blue-400 bg-blue-500/10';
         if (score >= 0.5) return 'text-yellow-400 bg-yellow-500/10';
-        return 'text-slate-400 bg-slate-500/10';
+        return 'text-slate-600 dark:text-slate-400 bg-slate-500/10';
     };
 
     return (
@@ -66,7 +66,7 @@ export function TopPerformersTable({ nodes, limit = 5 }: TopPerformersTableProps
                                     <div className="font-mono text-sm text-slate-200">
                                         {node.node_id.slice(0, 8)}...{node.node_id.slice(-6)}
                                     </div>
-                                    <div className="text-xs text-slate-500">
+                                    <div className="text-xs text-slate-600 dark:text-slate-600 dark:text-slate-500">
                                         {node.geo?.country || 'Unknown'} • {node.address}
                                     </div>
                                 </div>
@@ -84,7 +84,7 @@ export function TopPerformersTable({ nodes, limit = 5 }: TopPerformersTableProps
             </div>
 
             {topNodes.length === 0 && (
-                <div className="py-8 text-center text-sm text-slate-500">
+                <div className="py-8 text-center text-sm text-slate-600 dark:text-slate-600 dark:text-slate-500">
                     No performance data available
                 </div>
             )}

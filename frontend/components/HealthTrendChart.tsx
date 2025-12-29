@@ -18,7 +18,7 @@ export function HealthTrendChart({ data, height = 300 }: HealthTrendChartProps) 
     if (!data || data.length === 0) {
         return (
             <div className={`flex h-[${height}px] items-center justify-center rounded-2xl border border-slate-800 bg-slate-900/50 p-8`}>
-                <p className="text-slate-400">No health history available</p>
+                <p className="text-slate-600 dark:text-slate-600 dark:text-slate-400">No health history available</p>
             </div>
         );
     }
@@ -80,7 +80,7 @@ export function HealthTrendChart({ data, height = 300 }: HealthTrendChartProps) 
                         labelStyle={{ color: '#cbd5e1' }}
                         itemStyle={{ color: '#10b981' }}
                         labelFormatter={(label, payload) => payload[0]?.payload.fullDate || label}
-                        formatter={(value: number) => [value.toFixed(1), 'Health Score']}
+                        formatter={(value: number | undefined) => [value != null ? value.toFixed(1) : '0.0', 'Health Score']}
                     />
                     <Area
                         type="monotone"

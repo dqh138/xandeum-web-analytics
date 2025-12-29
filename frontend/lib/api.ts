@@ -30,8 +30,8 @@ export const fetchNodeDetails = async (nodeId: string) => {
 };
 
 
-export const fetchNodeHistory = async (nodeId: string) => {
-  const response = await api.get(`/pnodes/${nodeId}/history`);
+export const fetchNodeHistory = async (nodeId: string, limit = 24) => {
+  const response = await api.get(`/pnodes/${nodeId}/history?limit=${limit}`);
   return response.data;
 };
 

@@ -4,10 +4,13 @@ import { useState, useEffect } from 'react';
 import { fetchPNodes } from '@/lib/api';
 import { NodeTable } from '@/components/NodeTable';
 import { Trophy } from 'lucide-react';
+import { useSidebar } from '@/context/SidebarContext';
+import { cn } from '@/lib/utils';
 
 export default function LeaderboardPage() {
     const [nodes, setNodes] = useState([]);
     const [loading, setLoading] = useState(true);
+    const { isCollapsed } = useSidebar();
 
     useEffect(() => {
         const loadData = async () => {
@@ -24,30 +27,33 @@ export default function LeaderboardPage() {
     }, []);
 
     return (
-        <main className="min-h-screen bg-slate-950 p-6 md:p-12">
+        <main className={cn(
+            "min-h-screen p-6 md:p-12 transition-all duration-300 bg-slate-950",
+            isCollapsed ? "lg:pl-28" : "lg:pl-72"
+        )}>
             <div className="mx-auto max-w-7xl space-y-8">
                 <header>
                     <h1 className="flex items-center gap-3 bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-4xl font-bold text-transparent">
                         <Trophy className="h-8 w-8 text-blue-500" />
                         Network Leaderboard
                     </h1>
-                    <p className="mt-2 text-slate-400">
+                    <p className="mt-2 text-slate-600 dark:text-slate-600 dark:text-slate-400">
                         Rankings and detailed status of all participating nodes.
                     </p>
                 </header>
 
                 {loading ? (
-                    <div className="flex h-64 items-center justify-center rounded-xl border border-slate-800 bg-slate-900/50">
+                    <div className="flex h-64 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-900/50">
                         <div className="flex flex-col items-center gap-4">
                             <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-                            <p className="text-slate-400">Loading leaderboard data...</p>
+                            <p className="text-slate-600 dark:text-slate-600 dark:text-slate-400">Loading leaderboard data...</p>
                         </div>
                     </div>
                 ) : (
                     <NodeTable nodes={nodes} />
                 )}
 
-                <footer className="mt-20 border-t border-slate-800 pt-8 text-center text-sm text-slate-500">
+                <footer className="mt-20 border-t border-slate-200 dark:border-slate-800 pt-8 text-center text-sm text-slate-600 dark:text-slate-600 dark:text-slate-500">
                     <p>© 2025 Xandeum Analytics. Data updates in real-time.</p>
                 </footer>
             </div>

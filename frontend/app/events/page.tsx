@@ -6,6 +6,8 @@ import { ArrowLeft, Calendar, Filter, AlertCircle, Info, AlertTriangle, Search, 
 import { fetchEvents } from '@/lib/api';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { MetricCardSkeleton } from '@/components/ui/Skeleton';
+import { useSidebar } from '@/context/SidebarContext';
+import { cn } from '@/lib/utils';
 
 export default function EventsDashboard() {
     const [events, setEvents] = useState<any[]>([]);
@@ -14,6 +16,7 @@ export default function EventsDashboard() {
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState('');
+    const { isCollapsed } = useSidebar();
 
     useEffect(() => {
         const loadData = async () => {
@@ -79,7 +82,7 @@ export default function EventsDashboard() {
 
     if (loading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-slate-900">
+            <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-slate-900">
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
             </div>
         );
@@ -120,13 +123,16 @@ export default function EventsDashboard() {
     const infoCount = events.filter(e => e.severity === 'info').length;
 
     return (
-        <main className="min-h-screen p-6 md:p-12">
+        <main className={cn(
+            "min-h-screen p-6 md:p-12 transition-all duration-300 bg-slate-950",
+            isCollapsed ? "lg:pl-28" : "lg:pl-72"
+        )}>
             <div className="mx-auto max-w-7xl space-y-8">
                 {/* Header */}
                 <div>
                     <Link
                         href="/"
-                        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
+                        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-600 dark:text-slate-400 transition-colors hover:text-slate-900 dark:text-white"
                     >
                         <ArrowLeft size={16} />
                         Back to Dashboard
@@ -134,16 +140,16 @@ export default function EventsDashboard() {
 
                     <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                         <div>
-                            <h1 className="flex items-center gap-3 text-3xl font-bold text-white">
+                            <h1 className="flex items-center gap-3 text-3xl font-bold text-slate-900 dark:text-white">
                                 <Calendar className="text-blue-500" />
                                 Events Timeline
                             </h1>
-                            <p className="mt-2 text-slate-400">Network monitoring events log</p>
+                            <p className="mt-2 text-slate-600 dark:text-slate-600 dark:text-slate-400">Network monitoring events log</p>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="text-right">
-                                <p className="text-2xl font-bold text-white">{filteredEvents.length}</p>
-                                <p className="text-xs text-slate-400">Filtered Events</p>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white">{filteredEvents.length}</p>
+                                <p className="text-xs text-slate-600 dark:text-slate-600 dark:text-slate-400">Filtered Events</p>
                             </div>
                         </div>
                     </div>
@@ -179,9 +185,9 @@ export default function EventsDashboard() {
                 </div>
 
                 {/* Filters & Controls */}
-                <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 backdrop-blur-sm">
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-900/50 p-4 backdrop-blur-sm">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-                        <div className="flex items-center gap-2 text-slate-400">
+                        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-600 dark:text-slate-400">
                             <Filter className="h-4 w-4" />
                             <span className="text-sm font-medium">Filters:</span>
                         </div>
@@ -190,7 +196,7 @@ export default function EventsDashboard() {
                             <select
                                 value={selectedCategory}
                                 onChange={(e) => setSelectedCategory(e.target.value)}
-                                className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
+                                className="rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-800 px-3 py-2 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
                             >
                                 {categories.map(cat => (
                                     <option key={cat} value={cat}>
@@ -202,7 +208,7 @@ export default function EventsDashboard() {
                             <select
                                 value={selectedSeverity}
                                 onChange={(e) => setSelectedSeverity(e.target.value)}
-                                className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
+                                className="rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-800 px-3 py-2 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
                             >
                                 {severities.map(sev => (
                                     <option key={sev} value={sev}>
@@ -214,13 +220,13 @@ export default function EventsDashboard() {
 
                         {/* Search Bar */}
                         <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600 dark:text-slate-600 dark:text-slate-500" />
                             <input
                                 type="text"
                                 placeholder="Search by message, node ID, or type..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full rounded-lg border border-slate-700 bg-slate-800 pl-10 pr-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-800 pl-10 pr-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-blue-500 focus:outline-none"
                             />
                         </div>
 
@@ -228,7 +234,7 @@ export default function EventsDashboard() {
                         <button
                             onClick={handleExportCSV}
                             disabled={filteredEvents.length === 0}
-                            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-slate-900 dark:text-white transition-colors hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Download className="h-4 w-4" />
                             Export CSV
@@ -237,10 +243,10 @@ export default function EventsDashboard() {
                 </div>
 
                 {/* Events List */}
-                <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
                     <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
                         {filteredEvents.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+                            <div className="flex flex-col items-center justify-center py-12 text-slate-600 dark:text-slate-600 dark:text-slate-500">
                                 <Search className="mb-4 h-12 w-12 opacity-20" />
                                 <p>No events match your current filters.</p>
                             </div>
@@ -248,7 +254,7 @@ export default function EventsDashboard() {
                             filteredEvents.map((event) => (
                                 <div
                                     key={event.event_id}
-                                    className="flex gap-4 rounded-lg border border-slate-800/50 bg-slate-800/30 p-4 transition-all hover:border-slate-700 hover:bg-slate-800/50"
+                                    className="flex gap-4 rounded-lg border border-slate-800/50 bg-slate-50 dark:bg-slate-50 dark:bg-slate-800/30 p-4 transition-all hover:border-slate-300 dark:border-slate-700 hover:bg-slate-800/50"
                                 >
                                     <div className="mt-1 flex-shrink-0">{getIcon(event.severity)}</div>
 
@@ -260,16 +266,16 @@ export default function EventsDashboard() {
                                                     <span className={`inline-flex items-center rounded-full border px-2 py-0.5 font-medium ${getSeverityStyles(event.severity)}`}>
                                                         {event.severity.toUpperCase()}
                                                     </span>
-                                                    <span className="inline-flex items-center rounded-full border border-slate-700 bg-slate-800/50 px-2 py-0.5 text-slate-400">
+                                                    <span className="inline-flex items-center rounded-full border border-slate-300 dark:border-slate-700 bg-slate-800/50 px-2 py-0.5 text-slate-600 dark:text-slate-600 dark:text-slate-400">
                                                         {event.category.toUpperCase()}
                                                     </span>
-                                                    <span className="inline-flex items-center rounded-full border border-slate-700 bg-slate-800/50 px-2 py-0.5 text-slate-400">
+                                                    <span className="inline-flex items-center rounded-full border border-slate-300 dark:border-slate-700 bg-slate-800/50 px-2 py-0.5 text-slate-600 dark:text-slate-600 dark:text-slate-400">
                                                         {event.type}
                                                     </span>
                                                 </div>
                                             </div>
 
-                                            <div className="flex-shrink-0 text-xs text-slate-500 md:text-right font-mono">
+                                            <div className="flex-shrink-0 text-xs text-slate-600 dark:text-slate-600 dark:text-slate-500 md:text-right font-mono">
                                                 <div suppressHydrationWarning>{new Date(event.timestamp).toLocaleDateString()}</div>
                                                 <div suppressHydrationWarning>{new Date(event.timestamp).toLocaleTimeString()}</div>
                                             </div>
@@ -278,13 +284,13 @@ export default function EventsDashboard() {
                                         {event.details.old_value !== undefined && event.details.new_value !== undefined && (
                                             <div className="mt-3 grid gap-2 rounded border border-slate-700/50 bg-slate-900/50 p-3 text-xs md:grid-cols-2">
                                                 <div>
-                                                    <span className="text-slate-500">Previous:</span>
+                                                    <span className="text-slate-600 dark:text-slate-600 dark:text-slate-500">Previous:</span>
                                                     <code className="ml-2 block rounded bg-slate-950/50 p-1 text-red-300">
                                                         {JSON.stringify(event.details.old_value)}
                                                     </code>
                                                 </div>
                                                 <div>
-                                                    <span className="text-slate-500">New Value:</span>
+                                                    <span className="text-slate-600 dark:text-slate-600 dark:text-slate-500">New Value:</span>
                                                     <code className="ml-2 block rounded bg-slate-950/50 p-1 text-emerald-300">
                                                         {JSON.stringify(event.details.new_value)}
                                                     </code>
@@ -292,8 +298,8 @@ export default function EventsDashboard() {
                                             </div>
                                         )}
 
-                                        <div className="mt-2 truncate font-mono text-xs text-slate-600">
-                                            Node ID: <span className="select-all hover:text-slate-400">{event.node_id}</span>
+                                        <div className="mt-2 truncate font-mono text-xs text-slate-600 dark:text-slate-500 dark:text-slate-600">
+                                            Node ID: <span className="select-all hover:text-slate-600 dark:text-slate-600 dark:text-slate-400">{event.node_id}</span>
                                         </div>
                                     </div>
                                 </div>

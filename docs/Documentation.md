@@ -1,12 +1,12 @@
 # Xandeum Web Analytics - Complete Documentation
 
-**Version:** 2.0.0  
-**Last Updated:** 2025-12-15  
-**Status:** ✅ Production Ready
+**Version:** 2.1.0  
+**Last Updated:** 2025-12-29  
+**Status:** Production Ready
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 
 1. [Overview](#overview)
 2. [System Architecture](#system-architecture)
@@ -37,14 +37,14 @@ Xandeum Web Analytics is a comprehensive **pNode Analytics Dashboard** that prov
 
 ### Key Features
 
-✅ Real-time pNode monitoring via gossip network  
-✅ Comprehensive storage analytics  
-✅ Event tracking and audit log  
-✅ Provider-level business intelligence  
-✅ Network health scoring  
-✅ Time-series metrics for trending  
-✅ Alert system (ready for rules)  
-✅ Auto-sync every minute
+Real-time pNode monitoring via gossip network  
+Comprehensive storage analytics  
+Event tracking and audit log  
+Provider-level business intelligence  
+Network health scoring  
+Time-series metrics for trending  
+Alert system (ready for rules)  
+Auto-sync every minute
 
 ---
 
@@ -714,47 +714,56 @@ Get pNodes from gossip network with full details.
 ### Implemented Features
 
 #### Data Collection
-- ✅ Real-time pNode discovery via gossip network
-- ✅ Detailed metrics via direct pRPC calls
-- ✅ Auto-sync every minute
-- ✅ Retry mechanism with fallback
-- ✅ Graceful error handling
+- Real-time pNode discovery via gossip network
+- Detailed metrics via direct pRPC calls
+- Auto-sync every minute
+- Retry mechanism with fallback
+- Graceful error handling
 
 #### Storage Analytics
-- ✅ Total capacity tracking
-- ✅ Usage monitoring
-- ✅ Distribution analysis (by size)
-- ✅ Growth trends
-- ✅ Top storage providers
+- Total capacity tracking
+- Usage monitoring
+- Distribution analysis (by size)
+- Growth trends
+- Top storage providers
 
 #### Performance Monitoring
-- ✅ CPU and RAM tracking
-- ✅ Network throughput
-- ✅ Uptime reliability
-- ✅ Response time (latency)
-- ✅ Percentile calculations (p95)
+- CPU and RAM tracking
+- Network throughput
+- Uptime reliability
+- Response time (latency)
+- Percentile calculations (p95)
 
 #### Event Tracking
-- ✅ Node lifecycle events
-- ✅ Capacity changes
-- ✅ Status changes
-- ✅ Version upgrades
-- ✅ Performance alerts
-- ✅ Storage warnings
+- Node lifecycle events
+- Capacity changes
+- Status changes
+- Version upgrades
+- Performance alerts
+- Storage warnings
 
 #### Provider Analytics
-- ✅ Auto-grouping by IP subnet
-- ✅ Aggregate metrics
-- ✅ Node counts
-- ✅ Storage totals
-- ✅ Performance averages
+- Auto-grouping by IP subnet
+- Aggregate metrics
+- Node counts
+- Storage totals
+- Performance averages
 
 #### Network Health
-- ✅ Overall health score (0-100)
-- ✅ Availability tracking
-- ✅ Reliability scoring
-- ✅ Performance scoring
-- ✅ Trend analysis
+- Overall health score (0-100)
+- Availability tracking
+- Reliability scoring
+- Performance scoring
+- Trend analysis
+- Critical anomaly detection
+
+#### Frontend Experience
+- **New Command Center**: Interactive map with real-time syncing list.
+- **Advanced Filtering**: Filter nodes by Status (Online/Offline) and Country.
+- **Smart Pagination**: Full pagination controls for Providers list (Page numbers, Ellipsis, Size Selector).
+- **Enhanced Readability**: High-contrast text colors optimized for dark mode.
+- **Responsive Design**: Mobile-friendly layouts for all dashboards.
+- **Country Mapping**: Auto-fallback logic for missing country codes.
 
 ---
 
@@ -952,7 +961,7 @@ Result: 0-100 score
 
 ---
 
-## 📞 Support & Contact
+## Support & Contact
 
 - **Documentation:** This file
 - **Backend URL:** http://localhost:3001
@@ -960,12 +969,12 @@ Result: 0-100 score
 
 ---
 
-## 📄 License
+## License
 
 MIT License - See LICENSE file for details
 
 ---
 
-**Document Version:** 2.0.0  
-**Last Updated:** 2025-12-15 10:01 AM  
-**Status:** ✅ Complete & Production Ready
+**Document Version:** 2.1.0  
+**Last Updated:** 2025-12-29  
+**Status:** Complete & Production Ready

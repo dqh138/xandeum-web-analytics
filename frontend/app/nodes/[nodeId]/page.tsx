@@ -87,7 +87,7 @@ export default function NodeDetailPage() {
         <div>
           <Link
             href="/"
-            className="mb-6 inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
+            className="mb-6 inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-slate-900 dark:hover:text-white"
           >
             <ArrowLeft size={16} />
             Back to Dashboard
@@ -288,7 +288,7 @@ export default function NodeDetailPage() {
                     contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#f8fafc' }}
                     itemStyle={{ color: '#10b981' }}
                     labelFormatter={(label: string) => new Date(label).toLocaleString()}
-                    formatter={(value: number) => [`${value.toFixed(2)}%`, 'Usage']}
+                    formatter={(value?: number) => [`${value?.toFixed(2) ?? '0.00'}%`, 'Usage']}
                   />
                   <Area
                     type="monotone"
@@ -331,7 +331,7 @@ export default function NodeDetailPage() {
                     contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#f8fafc' }}
                     itemStyle={{ color: '#3b82f6' }}
                     labelFormatter={(label: string) => new Date(label).toLocaleString()}
-                    formatter={(value: number) => [`${(value / 3600).toFixed(2)}h`, 'Uptime']}
+                    formatter={(value?: number) => [`${((value ?? 0) / 3600).toFixed(2)}h`, 'Uptime']}
                   />
                   <Area
                     type="monotone"

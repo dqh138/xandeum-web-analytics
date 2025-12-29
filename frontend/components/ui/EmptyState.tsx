@@ -17,7 +17,7 @@ interface EmptyStateProps {
 const variantStyles = {
     default: {
         icon: 'text-slate-500',
-        bg: 'bg-slate-800/30',
+        bg: 'bg-slate-50 dark:bg-slate-800/30',
         border: 'border-slate-800',
     },
     error: {
@@ -65,7 +65,7 @@ export function EmptyState({
             {action && (
                 <button
                     onClick={action.onClick}
-                    className="rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500"
+                    className="rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium text-slate-900 dark:text-white transition-colors hover:bg-blue-500"
                 >
                     {action.label}
                 </button>

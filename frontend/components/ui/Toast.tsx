@@ -69,10 +69,10 @@ const ToastItem = ({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
     };
 
     const borders = {
-        success: 'border-emerald-500/20 bg-emerald-950/90 shadow-emerald-900/20',
-        error: 'border-red-500/20 bg-red-950/90 shadow-red-900/20',
-        warning: 'border-orange-500/20 bg-orange-950/90 shadow-orange-900/20',
-        info: 'border-slate-700 bg-slate-900/90 shadow-slate-900/20',
+        success: 'border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-950/90 shadow-lg shadow-emerald-500/10 dark:shadow-emerald-900/20',
+        error: 'border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-950/90 shadow-lg shadow-red-500/10 dark:shadow-red-900/20',
+        warning: 'border-orange-200 dark:border-orange-500/20 bg-orange-50 dark:bg-orange-950/90 shadow-lg shadow-orange-500/10 dark:shadow-orange-900/20',
+        info: 'border-slate-700 bg-slate-900/90 shadow-lg shadow-slate-200/50 dark:shadow-slate-900/20',
     };
 
     return (
@@ -81,13 +81,13 @@ const ToastItem = ({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
             layout
-            className={`pointer-events-auto flex min-w-[300px] items-center gap-3 rounded-lg border p-4 shadow-xl backdrop-blur-md ${borders[toast.type]}`}
+            className={`pointer-events-auto flex min-w-[300px] items-center gap-3 rounded-lg border p-4 backdrop-blur-md ${borders[toast.type]}`}
         >
             <div className="flex-shrink-0">{icons[toast.type]}</div>
             <p className="flex-1 text-sm font-medium text-slate-200">{toast.message}</p>
             <button
                 onClick={() => onRemove(toast.id)}
-                className="text-slate-500 hover:text-white transition-colors"
+                className="text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 transition-colors"
             >
                 <X size={14} />
             </button>

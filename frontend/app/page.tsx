@@ -9,7 +9,7 @@ import { StorageCapacityGauge } from '@/components/StorageCapacityGauge';
 import { NetworkGrowthChart } from '@/components/NetworkGrowthChart';
 import { TopPerformersTable } from '@/components/TopPerformersTable';
 import { EventsFeed } from '@/components/EventsFeed';
-import { GeoMap } from '@/components/GeoMap';
+import { NetworkCommandCenter } from '@/components/NetworkCommandCenter';
 import { useSidebar } from '@/context/SidebarContext';
 import { cn } from '@/lib/utils';
 
@@ -145,6 +145,10 @@ export default function Home() {
           snapshot={latestSnapshot}
           previousSnapshot={previousSnapshot}
           loading={!latestSnapshot}
+          liveNodeCounts={{
+            online: onlineNodes.length,
+            total: data.nodes.length
+          }}
         />
 
         {/* Bento Grid Layout - Charts */}
@@ -167,8 +171,8 @@ export default function Home() {
           <EventsFeed events={data.events} />
         </div>
 
-        {/* Global Map */}
-        <GeoMap nodes={data.nodes} />
+        {/* Global Map & Node Intelligence */}
+        <NetworkCommandCenter nodes={data.nodes} />
 
         {/* Footer */}
         <footer className="mt-12 border-t border-slate-800 pt-8 text-center text-sm text-slate-500">

@@ -1,7 +1,39 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Calculator, Coins, Server, Database, TrendingUp, Info, Activity, DollarSign, Clock } from 'lucide-react';
+import { useState } from 'react';
+import { Calculator, Coins, Server, Database, TrendingUp, Activity, Clock, LucideIcon } from 'lucide-react';
+
+interface InputRangeProps {
+    label: string;
+    value: number;
+    min: number;
+    max: number;
+    step: number;
+    onChange: (value: number) => void;
+    icon?: LucideIcon;
+    unit?: string;
+}
+
+const InputRange = ({ label, value, min, max, step, onChange, icon: Icon, unit }: InputRangeProps) => (
+    <div className="space-y-3">
+        <div className="flex justify-between">
+            <label className="flex items-center gap-2 text-xs font-medium text-slate-400">
+                {Icon && <Icon className="h-3 w-3" />}
+                {label}
+            </label>
+            <span className="font-mono text-xs font-bold text-white">{value} {unit}</span>
+        </div>
+        <input
+            type="range"
+            min={min}
+            max={max}
+            step={step}
+            value={value}
+            onChange={(e) => onChange(Number(e.target.value))}
+            className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-800 accent-blue-500"
+        />
+    </div>
+);
 
 export function StoincCalculator() {
     // User Inputs
@@ -14,20 +46,22 @@ export function StoincCalculator() {
     // Financial Inputs
     const [investmentCost, setInvestmentCost] = useState(2000); // $
     const [stoincPrice, setStoincPrice] = useState(0.05); // $
-    const [epochsPerDay, setEpochsPerDay] = useState(1);
+    const [epochsPerDay] = useState(1); // Assuming this is constant for now or could be state but wasn't changing in original code except via unused setter
 
     // Network Globals (Estimates)
     const [totalNetworkCredits, setTotalNetworkCredits] = useState(5000000);
     const [totalFees, setTotalFees] = useState(100000);
-    const [pNodeShare, setPNodeShare] = useState(0.3); // 30%
+    const [pNodeShare] = useState(0.3); // 30%
 
-    // Calculated Results
-    const [storageCredits, setStorageCredits] = useState(0);
-    const [myBoostedCredits, setMyBoostedCredits] = useState(0);
-    const [stoincReward, setStoincReward] = useState(0);
-    const [networkShare, setNetworkShare] = useState(0);
-    const [dailyIncome, setDailyIncome] = useState(0);
-    const [breakEvenDays, setBreakEvenDays] = useState(0);
+    // Derived Calculations
+    const baseCredits = pNodes * storage * performance * stake;
+    const myBoostedCredits = baseCredits * boost;
+    const safeTotalCredits = Math.max(totalNetworkCredits, myBoostedCredits, 1);
+    const networkShare = myBoostedCredits / safeTotalCredits;
+    const stoincReward = networkShare * totalFees * pNodeShare;
+    const dailyStoinc = stoincReward * epochsPerDay;
+    const dailyIncome = dailyStoinc * stoincPrice;
+    const breakEvenDays = dailyIncome > 0 ? investmentCost / dailyIncome : 9999;
 
     const applyScenario = (type: 'conservative' | 'moderate' | 'aggressive') => {
         switch (type) {
@@ -52,54 +86,6 @@ export function StoincCalculator() {
         }
     };
 
-    useEffect(() => {
-        // Formula 1: Storage Credits
-        const baseCredits = pNodes * storage * performance * stake;
-        setStorageCredits(baseCredits);
-
-        // Apply Boost
-        const boosted = baseCredits * boost;
-        setMyBoostedCredits(boosted);
-
-        // Formula 2: STOINC Calculation
-        const safeTotalCredits = Math.max(totalNetworkCredits, boosted, 1);
-        const myShare = boosted / safeTotalCredits;
-        setNetworkShare(myShare);
-
-        const stoincPerEpoch = myShare * totalFees * pNodeShare;
-        setStoincReward(stoincPerEpoch);
-
-        // Financials
-        const dailyStoinc = stoincPerEpoch * epochsPerDay;
-        const dailyUsd = dailyStoinc * stoincPrice;
-        setDailyIncome(dailyUsd);
-
-        const days = dailyUsd > 0 ? investmentCost / dailyUsd : 9999;
-        setBreakEvenDays(days);
-
-    }, [pNodes, storage, performance, stake, boost, totalNetworkCredits, totalFees, pNodeShare, epochsPerDay, investmentCost, stoincPrice]);
-
-    const InputRange = ({ label, value, min, max, step, onChange, icon: Icon, unit }: any) => (
-        <div className="space-y-3">
-            <div className="flex justify-between">
-                <label className="flex items-center gap-2 text-xs font-medium text-slate-400">
-                    {Icon && <Icon className="h-3 w-3" />}
-                    {label}
-                </label>
-                <span className="font-mono text-xs font-bold text-white">{value} {unit}</span>
-            </div>
-            <input
-                type="range"
-                min={min}
-                max={max}
-                step={step}
-                value={value}
-                onChange={(e) => onChange(Number(e.target.value))}
-                className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-800 accent-blue-500"
-            />
-        </div>
-    );
-
     return (
         <div className="grid gap-8 lg:grid-cols-2">
 
@@ -108,13 +94,13 @@ export function StoincCalculator() {
 
                 {/* Scenarios */}
                 <div className="flex gap-2">
-                    <button onClick={() => applyScenario('conservative')} className="flex-1 rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs font-medium text-slate-400 transition-hover hover:border-blue-500 hover:text-white">
+                    <button onClick={() => applyScenario('conservative')} className="flex-1 rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs font-medium text-slate-400 transition-hover hover:border-blue-500 hover:text-slate-900 dark:hover:text-white">
                         Conservative
                     </button>
                     <button onClick={() => applyScenario('moderate')} className="flex-1 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs font-medium text-blue-400 transition-hover hover:bg-blue-500/20">
                         Moderate
                     </button>
-                    <button onClick={() => applyScenario('aggressive')} className="flex-1 rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs font-medium text-slate-400 transition-hover hover:border-amber-500 hover:text-white">
+                    <button onClick={() => applyScenario('aggressive')} className="flex-1 rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs font-medium text-slate-400 transition-hover hover:border-amber-500 hover:text-slate-900 dark:hover:text-white">
                         Aggressive
                     </button>
                 </div>
@@ -222,7 +208,7 @@ export function StoincCalculator() {
 
                     <div className="mt-4 grid grid-cols-2 gap-4 text-xs text-slate-500 font-mono">
                         <div>
-                            ROI (First Year): <span className="text-slate-300">{((dailyIncome * 365 / investmentCost) * 100).toFixed(1)}%</span>
+                            ROI (First Year): <span className="text-slate-300">{investmentCost > 0 ? ((dailyIncome * 365 / investmentCost) * 100).toFixed(1) : '0.0'}%</span>
                         </div>
                         <div>
                             Network Share: <span className="text-slate-300">{(networkShare * 100).toFixed(6)}%</span>

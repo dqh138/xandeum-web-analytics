@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, ShieldCheck, AlertCircle, Medal, Star, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
 import { useStarredNodes } from '@/hooks/useStarredNodes';
+import { useNodeUserData } from '@/hooks/useNodeUserData';
 
 interface Node {
     node_id: string;
@@ -28,8 +29,23 @@ interface NodeTableProps {
 type SortKey = 'node_id' | 'status' | 'version' | 'country' | 'performance_score';
 type SortDirection = 'asc' | 'desc';
 
+interface SortIconProps {
+    column: SortKey;
+    sortConfig: { key: SortKey; direction: SortDirection };
+}
+
+const SortIcon = ({ column, sortConfig }: SortIconProps) => {
+    if (sortConfig.key !== column) return <ArrowUpDown size={14} className="ml-1 text-slate-400" />;
+    return sortConfig.direction === 'asc' ? (
+        <ArrowUp size={14} className="ml-1 text-blue-400" />
+    ) : (
+        <ArrowDown size={14} className="ml-1 text-blue-400" />
+    );
+};
+
 export function NodeTable({ nodes }: NodeTableProps) {
     const { toggleStar, isStarred } = useStarredNodes();
+    const { getAlias } = useNodeUserData();
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'online' | 'offline'>('all');
     const [countryFilter, setCountryFilter] = useState<string>('all');
@@ -150,16 +166,9 @@ export function NodeTable({ nodes }: NodeTableProps) {
     );
 
     // Reset page when filters change
-    useMemo(() => setCurrentPage(1), [search, statusFilter, countryFilter, scoreFilter]);
-
-    const SortIcon = ({ column }: { column: SortKey }) => {
-        if (sortConfig.key !== column) return <ArrowUpDown size={14} className="ml-1 text-slate-600" />;
-        return sortConfig.direction === 'asc' ? (
-            <ArrowUp size={14} className="ml-1 text-blue-400" />
-        ) : (
-            <ArrowDown size={14} className="ml-1 text-blue-400" />
-        );
-    };
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [search, statusFilter, countryFilter, scoreFilter]);
 
     return (
         <div className="space-y-4">
@@ -224,7 +233,7 @@ export function NodeTable({ nodes }: NodeTableProps) {
                                 setCountryFilter('all');
                                 setScoreFilter('all');
                             }}
-                            className="ml-auto flex items-center gap-1 text-xs text-slate-400 hover:text-white"
+                            className="ml-auto flex items-center gap-1 text-xs text-slate-400 hover:text-slate-900 dark:hover:text-white"
                         >
                             <X size={12} /> Clear all
                         </button>
@@ -247,34 +256,34 @@ export function NodeTable({ nodes }: NodeTableProps) {
                                 </th>
                                 <th className="px-6 py-4 font-semibold w-16 text-center">#</th>
                                 <th
-                                    className="cursor-pointer px-6 py-4 font-semibold hover:text-slate-300"
+                                    className="cursor-pointer px-6 py-4 font-semibold hover:text-slate-700 dark:hover:text-slate-300"
                                     onClick={() => handleSort('node_id')}
                                 >
-                                    <div className="flex items-center">Node ID <SortIcon column="node_id" /></div>
+                                    <div className="flex items-center">Node ID <SortIcon column="node_id" sortConfig={sortConfig} /></div>
                                 </th>
                                 <th
-                                    className="cursor-pointer px-6 py-4 font-semibold hover:text-slate-300"
+                                    className="cursor-pointer px-6 py-4 font-semibold hover:text-slate-700 dark:hover:text-slate-300"
                                     onClick={() => handleSort('status')}
                                 >
-                                    <div className="flex items-center">Status <SortIcon column="status" /></div>
+                                    <div className="flex items-center">Status <SortIcon column="status" sortConfig={sortConfig} /></div>
                                 </th>
                                 <th
-                                    className="cursor-pointer px-6 py-4 font-semibold hover:text-slate-300"
+                                    className="cursor-pointer px-6 py-4 font-semibold hover:text-slate-700 dark:hover:text-slate-300"
                                     onClick={() => handleSort('performance_score')}
                                 >
-                                    <div className="flex items-center">Score <SortIcon column="performance_score" /></div>
+                                    <div className="flex items-center">Score <SortIcon column="performance_score" sortConfig={sortConfig} /></div>
                                 </th>
                                 <th
-                                    className="cursor-pointer px-6 py-4 font-semibold hover:text-slate-300"
+                                    className="cursor-pointer px-6 py-4 font-semibold hover:text-slate-700 dark:hover:text-slate-300"
                                     onClick={() => handleSort('country')}
                                 >
-                                    <div className="flex items-center">Country <SortIcon column="country" /></div>
+                                    <div className="flex items-center">Country <SortIcon column="country" sortConfig={sortConfig} /></div>
                                 </th>
                                 <th
-                                    className="cursor-pointer px-6 py-4 font-semibold hover:text-slate-300"
+                                    className="cursor-pointer px-6 py-4 font-semibold hover:text-slate-700 dark:hover:text-slate-300"
                                     onClick={() => handleSort('version')}
                                 >
-                                    <div className="flex items-center">Version <SortIcon column="version" /></div>
+                                    <div className="flex items-center">Version <SortIcon column="version" sortConfig={sortConfig} /></div>
                                 </th>
                                 <th className="px-6 py-4 font-semibold">Address</th>
                                 <th className="px-6 py-4 font-semibold text-right">RPC Port</th>
@@ -283,10 +292,8 @@ export function NodeTable({ nodes }: NodeTableProps) {
                         <tbody className="divide-y divide-slate-800/50">
                             {paginatedNodes.length > 0 ? (
                                 paginatedNodes.map((node, index) => {
-                                    // Calculate global rank based on original sorted result if needed, 
-                                    // but usually rank is just current index in sorted list.
-                                    // However, since we paginate, the index is (page-1)*50 + index.
                                     const globalRank = (currentPage - 1) * itemsPerPage + index + 1;
+                                    const alias = getAlias(node.node_id);
 
                                     return (
                                         <tr key={node.node_id} className="hover:bg-slate-800/30 transition-colors">
@@ -304,14 +311,21 @@ export function NodeTable({ nodes }: NodeTableProps) {
                                             </td>
                                             <td className="px-6 py-4 text-center">
                                                 {globalRank === 1 && <Medal className="h-5 w-5 text-yellow-400 mx-auto" />}
-                                                {globalRank === 2 && <Medal className="h-5 w-5 text-slate-300 mx-auto" />}
+                                                {globalRank === 2 && <Medal className="h-5 w-5 text-slate-400 mx-auto" />}
                                                 {globalRank === 3 && <Medal className="h-5 w-5 text-amber-600 mx-auto" />}
                                                 {globalRank > 3 && <span className="font-mono text-slate-500">{globalRank}</span>}
                                             </td>
                                             <td className="px-6 py-4 font-mono text-slate-200">
-                                                <Link href={`/nodes/${node.node_id}`} className="hover:text-blue-400 hover:underline transition-colors">
-                                                    {node.node_id.slice(0, 8)}...{node.node_id.slice(-8)}
+                                                <Link href={`/nodes/${node.node_id}`} className="hover:text-blue-400 hover:underline transition-colors block">
+                                                    {alias ? (
+                                                        <span className="font-bold text-white">{alias}</span>
+                                                    ) : (
+                                                        <span>{node.node_id.slice(0, 8)}...{node.node_id.slice(-8)}</span>
+                                                    )}
                                                 </Link>
+                                                {alias && (
+                                                    <span className="text-[10px] text-slate-500">{node.node_id.slice(0, 8)}...</span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className={cn(
@@ -385,14 +399,14 @@ export function NodeTable({ nodes }: NodeTableProps) {
                             <button
                                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                                 disabled={currentPage === 1}
-                                className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-400 hover:bg-slate-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-400 hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <ChevronLeft size={14} /> Previous
                             </button>
                             <button
                                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                                 disabled={currentPage === totalPages}
-                                className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-400 hover:bg-slate-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-400 hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Next <ChevronRight size={14} />
                             </button>
@@ -400,8 +414,6 @@ export function NodeTable({ nodes }: NodeTableProps) {
                     </div>
                 )}
             </div>
-
-
         </div>
     );
 }

@@ -8,12 +8,15 @@ import { MetricCard } from '@/components/ui/MetricCard';
 import { MetricCardSkeleton } from '@/components/ui/Skeleton';
 import { HealthTrendChart } from '@/components/HealthTrendChart';
 import { formatDuration } from '@/lib/format';
+import { useSidebar } from '@/context/SidebarContext';
+import { cn } from '@/lib/utils';
 
 export default function HealthDashboard() {
     const [nodes, setNodes] = useState<any[]>([]);
     const [snapshots, setSnapshots] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [timeRange, setTimeRange] = useState<string>('1h');
+    const { isCollapsed } = useSidebar();
 
     const getSnapshotLimit = (range: string) => {
         switch (range) {
@@ -85,36 +88,39 @@ export default function HealthDashboard() {
 
 
     return (
-        <main className="min-h-screen p-6 md:p-12">
+        <main className={cn(
+            "min-h-screen p-6 md:p-12 transition-all duration-300 bg-slate-950",
+            isCollapsed ? "lg:pl-28" : "lg:pl-72"
+        )}>
             <div className="mx-auto max-w-7xl space-y-8">
                 {/* Header */}
                 <div>
                     <Link
                         href="/"
-                        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
+                        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-600 dark:text-slate-400 transition-colors hover:text-slate-900 dark:text-white"
                     >
                         <ArrowLeft size={16} />
                         Back to Dashboard
                     </Link>
 
-                    <h1 className="flex items-center gap-3 text-3xl font-bold text-white">
+                    <h1 className="flex items-center gap-3 text-3xl font-bold text-slate-900 dark:text-white">
                         <Activity className="text-emerald-500" />
                         Network Health Monitor
                     </h1>
-                    <p className="mt-2 text-slate-400">Real-time performance and reliability metrics</p>
+                    <p className="mt-2 text-slate-600 dark:text-slate-600 dark:text-slate-400">Real-time performance and reliability metrics</p>
                 </div>
 
                 {/* Main Health Card */}
                 {loading ? (
-                    <div className="h-48 animate-pulse rounded-xl bg-slate-800" />
+                    <div className="h-48 animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
                 ) : (
-                    <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-900 to-slate-800/50 p-8 backdrop-blur-sm">
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-gradient-to-br from-slate-900 to-slate-800/50 p-8 backdrop-blur-sm">
                         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                             <div>
-                                <h2 className="text-lg font-medium text-slate-400">Overall Network Health</h2>
+                                <h2 className="text-lg font-medium text-slate-600 dark:text-slate-600 dark:text-slate-400">Overall Network Health</h2>
                                 <div className="mt-4 flex items-baseline gap-3">
-                                    <span className="text-6xl font-bold text-white">{healthScore.toFixed(1)}</span>
-                                    <span className="text-2xl text-slate-500">/100</span>
+                                    <span className="text-6xl font-bold text-slate-900 dark:text-white">{healthScore.toFixed(1)}</span>
+                                    <span className="text-2xl text-slate-600 dark:text-slate-600 dark:text-slate-500">/100</span>
                                 </div>
                                 <div className={`mt-4 inline-flex items-center gap-2 rounded-full px-4 py-2 ${healthInfo.bannerBg}`}>
                                     <span className={`text-sm font-medium ${healthInfo.text}`}>{healthInfo.label}</span>
@@ -123,16 +129,16 @@ export default function HealthDashboard() {
 
                             <div className="grid grid-cols-2 gap-8 text-right md:grid-cols-1">
                                 <div>
-                                    <p className="text-sm text-slate-500">Availability Score</p>
-                                    <p className="text-xl font-medium text-white">{latestSnapshot?.health?.availability_percent?.toFixed(1)}%</p>
+                                    <p className="text-sm text-slate-600 dark:text-slate-600 dark:text-slate-500">Availability Score</p>
+                                    <p className="text-xl font-medium text-slate-900 dark:text-white">{latestSnapshot?.health?.availability_percent?.toFixed(1)}%</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-slate-500">Reliability Score</p>
-                                    <p className="text-xl font-medium text-white">{latestSnapshot?.health?.reliability_score?.toFixed(1)}/100</p>
+                                    <p className="text-sm text-slate-600 dark:text-slate-600 dark:text-slate-500">Reliability Score</p>
+                                    <p className="text-xl font-medium text-slate-900 dark:text-white">{latestSnapshot?.health?.reliability_score?.toFixed(1)}/100</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-slate-500">Performance Score</p>
-                                    <p className="text-xl font-medium text-white">{latestSnapshot?.health?.performance_score?.toFixed(1)}/100</p>
+                                    <p className="text-sm text-slate-600 dark:text-slate-600 dark:text-slate-500">Performance Score</p>
+                                    <p className="text-xl font-medium text-slate-900 dark:text-white">{latestSnapshot?.health?.performance_score?.toFixed(1)}/100</p>
                                 </div>
                             </div>
                         </div>
@@ -188,7 +194,7 @@ export default function HealthDashboard() {
                             <AlertTriangle className="h-5 w-5 text-orange-400" />
                             <div className="flex-1">
                                 <h3 className="font-semibold text-orange-400">Performance Warnings</h3>
-                                <div className="mt-3 space-y-2 text-sm text-slate-300">
+                                <div className="mt-3 space-y-2 text-sm text-slate-700 dark:text-slate-300">
                                     {highCpuNodes.length > 0 && (
                                         <p>• {highCpuNodes.length} node(s) with high CPU usage (&gt;80%)</p>
                                     )}
@@ -205,11 +211,11 @@ export default function HealthDashboard() {
                 <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
                     <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                         <div className="flex items-center gap-4">
-                            <h2 className="text-xl font-semibold text-white">Health Score History</h2>
+                            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Health Score History</h2>
                             {/* Stats Summary Inline */}
                             {!loading && snapshots.length > 0 && (
-                                <div className="hidden gap-3 text-xs text-slate-400 md:flex">
-                                    <span>Avg: <span className="text-white">{(snapshots.reduce((s, x) => s + (x.health?.score || 0), 0) / snapshots.length).toFixed(1)}</span></span>
+                                <div className="hidden gap-3 text-xs text-slate-600 dark:text-slate-600 dark:text-slate-400 md:flex">
+                                    <span>Avg: <span className="text-slate-900 dark:text-white">{(snapshots.reduce((s, x) => s + (x.health?.score || 0), 0) / snapshots.length).toFixed(1)}</span></span>
                                     <span>Max: <span className="text-emerald-400">{Math.max(...snapshots.map(s => s.health?.score || 0)).toFixed(1)}</span></span>
                                     <span>Min: <span className="text-orange-400">{Math.min(...snapshots.map(s => s.health?.score || 0)).toFixed(1)}</span></span>
                                 </div>
@@ -232,7 +238,7 @@ export default function HealthDashboard() {
                                     onClick={() => setTimeRange(value)}
                                     className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${timeRange === value
                                         ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/50'
-                                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+                                        : 'bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-700 hover:text-white'
                                         }`}
                                 >
                                     {label}

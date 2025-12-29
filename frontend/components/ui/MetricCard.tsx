@@ -67,8 +67,8 @@ export function MetricCard({
         return (
             <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
                 <div className="animate-pulse space-y-3">
-                    <div className="h-5 w-24 rounded bg-slate-800" />
-                    <div className="h-8 w-32 rounded bg-slate-800" />
+                    <div className="h-5 w-24 rounded bg-slate-200 dark:bg-slate-800" />
+                    <div className="h-8 w-32 rounded bg-slate-200 dark:bg-slate-800" />
                 </div>
             </div>
         );
@@ -77,19 +77,19 @@ export function MetricCard({
     if (isEmpty) {
         return (
             <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
-                <div className="flex items-center gap-3 text-slate-500">
+                <div className="flex items-center gap-3 text-slate-600 dark:text-slate-600 dark:text-slate-500">
                     <Icon className="h-5 w-5" />
                     <span className="text-sm font-medium">{label}</span>
                 </div>
-                <p className="mt-3 text-sm italic text-slate-600">{emptyMessage}</p>
+                <p className="mt-3 text-sm italic text-slate-600 dark:text-slate-500 dark:text-slate-600">{emptyMessage}</p>
             </div>
         );
     }
 
     return (
-        <div className="group relative overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm transition-all hover:border-slate-700 hover:bg-slate-800/50">
+        <div className="group relative overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm transition-all hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-800/50">
             {/* Subtle gradient overlay on hover */}
-            <div className="absolute inset-0 bg-gradient-to-br from-transparent to-slate-800/20 opacity-0 transition-opacity group-hover:opacity-100" />
+            <div className="absolute inset-0 bg-gradient-to-br from-transparent to-slate-200/20 dark:to-slate-800/20 opacity-0 transition-opacity group-hover:opacity-100" />
 
             <div className="relative">
                 <div className="flex items-center justify-between">
@@ -97,7 +97,7 @@ export function MetricCard({
                         <div className={cn('rounded-lg p-2', colors.icon)}>
                             <Icon className="h-5 w-5" />
                         </div>
-                        <span className="text-sm font-medium text-slate-400">{label}</span>
+                        <span className="text-sm font-medium text-slate-400 dark:text-slate-400">{label}</span>
                     </div>
 
                     {trend && (
@@ -105,7 +105,7 @@ export function MetricCard({
                             'flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold',
                             trend.value > 0 ? 'bg-emerald-500/10 text-emerald-400' :
                                 trend.value < 0 ? 'bg-red-500/10 text-red-400' :
-                                    'bg-slate-500/10 text-slate-400'
+                                    'bg-slate-500/10 text-slate-400 dark:text-slate-400'
                         )}>
                             {trend.value > 0 ? <TrendingUp size={12} /> :
                                 trend.value < 0 ? <TrendingDown size={12} /> :
@@ -120,7 +120,7 @@ export function MetricCard({
                         {value}
                     </p>
                     {trend?.label && (
-                        <span className="text-xs text-slate-500">{trend.label}</span>
+                        <span className="text-xs text-slate-400 dark:text-slate-400">{trend.label}</span>
                     )}
                 </div>
             </div>
