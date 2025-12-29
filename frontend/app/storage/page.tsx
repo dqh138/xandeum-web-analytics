@@ -9,11 +9,14 @@ import { NoDataState } from '@/components/ui/EmptyState';
 import { MetricCardSkeleton, TableSkeleton } from '@/components/ui/Skeleton';
 import { StorageTrendsChart } from '@/components/StorageTrendsChart';
 import { formatBytes, formatPercentage, safePercentage } from '@/lib/format';
+import { useSidebar } from '@/context/SidebarContext';
+import { cn } from '@/lib/utils';
 
 export default function StorageDashboard() {
     const [nodes, setNodes] = useState<any[]>([]);
     const [history, setHistory] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const { isCollapsed } = useSidebar();
 
     useEffect(() => {
         const loadData = async () => {
@@ -79,23 +82,26 @@ export default function StorageDashboard() {
         .slice(0, 10);
 
     return (
-        <main className="min-h-screen p-6 md:p-12">
+        <main className={cn(
+            "min-h-screen p-6 md:p-12 transition-all duration-300 bg-slate-950",
+            isCollapsed ? "lg:pl-28" : "lg:pl-72"
+        )}>
             <div className="mx-auto max-w-7xl space-y-8">
                 {/* Header */}
                 <div>
                     <Link
                         href="/"
-                        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
+                        className="mb-6 inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-600 dark:text-slate-400 transition-colors hover:text-slate-900 dark:text-white"
                     >
                         <ArrowLeft size={16} />
                         Back to Dashboard
                     </Link>
 
-                    <h1 className="flex items-center gap-3 text-3xl font-bold text-white">
+                    <h1 className="flex items-center gap-3 text-3xl font-bold text-slate-900 dark:text-white">
                         <HardDrive className="text-purple-500" />
                         Storage Analytics
                     </h1>
-                    <p className="mt-2 text-slate-400">Comprehensive storage capacity and usage analysis</p>
+                    <p className="mt-2 text-slate-600 dark:text-slate-600 dark:text-slate-400">Comprehensive storage capacity and usage analysis</p>
                 </div>
 
                 {/* Overview Stats */}
@@ -153,15 +159,15 @@ export default function StorageDashboard() {
                 </div>
 
                 {/* Storage Distribution */}
-                <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
-                    <h2 className="mb-6 text-xl font-semibold text-white">Storage Distribution</h2>
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
+                    <h2 className="mb-6 text-xl font-semibold text-slate-900 dark:text-white">Storage Distribution</h2>
 
                     {loading ? (
                         <div className="space-y-4">
                             {[1, 2, 3, 4].map(i => (
                                 <div key={i} className="space-y-2">
-                                    <div className="h-4 w-32 animate-pulse rounded bg-slate-800" />
-                                    <div className="h-2 w-full animate-pulse rounded bg-slate-800" />
+                                    <div className="h-4 w-32 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
+                                    <div className="h-2 w-full animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
                                 </div>
                             ))}
                         </div>
@@ -174,12 +180,12 @@ export default function StorageDashboard() {
                                 return (
                                     <div key={range}>
                                         <div className="mb-2 flex items-center justify-between text-sm">
-                                            <span className="text-slate-400">{range}</span>
-                                            <span className="font-medium text-white">
+                                            <span className="text-slate-600 dark:text-slate-600 dark:text-slate-400">{range}</span>
+                                            <span className="font-medium text-slate-900 dark:text-white">
                                                 {count} nodes ({formatPercentage(percentage, { decimals: 1 })})
                                             </span>
                                         </div>
-                                        <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+                                        <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                                             <div
                                                 className="h-full rounded-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-500"
                                                 style={{ width: `${percentage}%` }}
@@ -193,8 +199,8 @@ export default function StorageDashboard() {
                 </div>
 
                 {/* Top Storage Nodes */}
-                <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
-                    <h2 className="mb-6 text-xl font-semibold text-white">Top 10 Storage Providers</h2>
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
+                    <h2 className="mb-6 text-xl font-semibold text-slate-900 dark:text-white">Top 10 Storage Providers</h2>
 
                     {loading ? (
                         <TableSkeleton rows={10} columns={6} />
@@ -203,7 +209,7 @@ export default function StorageDashboard() {
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm">
-                                <thead className="border-b border-slate-800 text-xs uppercase text-slate-500">
+                                <thead className="border-b border-slate-200 dark:border-slate-800 text-xs uppercase text-slate-600 dark:text-slate-600 dark:text-slate-500">
                                     <tr>
                                         <th className="pb-3">Rank</th>
                                         <th className="pb-3">Node ID</th>
@@ -215,7 +221,7 @@ export default function StorageDashboard() {
                                 </thead>
                                 <tbody className="divide-y divide-slate-800/50">
                                     {topNodes.map((node, index) => (
-                                        <tr key={node.node_id} className="text-slate-300 transition-colors hover:bg-slate-800/30">
+                                        <tr key={node.node_id} className="text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-50 dark:bg-slate-50 dark:bg-slate-800/30">
                                             <td className="py-3 font-medium text-purple-400">#{index + 1}</td>
                                             <td className="py-3 font-mono text-xs">
                                                 <Link href={`/nodes/${node.node_id}`} className="hover:text-blue-400">

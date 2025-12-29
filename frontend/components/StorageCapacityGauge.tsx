@@ -57,13 +57,13 @@ export function StorageCapacityGauge({ totalStorage, usedStorage, capacityTrend,
                         </div>
                         <div>
                             <h3 className="text-lg font-semibold text-slate-200">Storage Capacity</h3>
-                            <p className="text-sm text-slate-500">Online nodes only</p>
+                            <p className="text-sm text-slate-400">Online nodes only</p>
                         </div>
                     </div>
 
                     {capacityTrend !== undefined && hasData && (
                         <div className={`flex items-center gap-1 rounded-lg px-3 py-1.5 ${capacityTrend > 0 ? 'bg-emerald-500/10 text-emerald-400' :
-                            capacityTrend < 0 ? 'bg-red-500/10 text-red-400' : 'bg-slate-800 text-slate-400'
+                            capacityTrend < 0 ? 'bg-red-500/10 text-red-400' : 'bg-slate-800 text-slate-600 dark:text-slate-400'
                             }`}>
                             <TrendingUp size={16} className={capacityTrend < 0 ? 'rotate-180' : ''} />
                             <span className="text-sm font-semibold">{capacityTrend > 0 ? '+' : ''}{capacityTrend.toFixed(1)}%</span>
@@ -75,10 +75,10 @@ export function StorageCapacityGauge({ totalStorage, usedStorage, capacityTrend,
                     // Empty state when no storage data
                     <div className="flex flex-col items-center justify-center py-12 text-center">
                         <div className="mb-4 rounded-full bg-slate-800/50 p-4">
-                            <HardDrive className="h-12 w-12 text-slate-600" />
+                            <HardDrive className="h-12 w-12 text-slate-600 dark:text-slate-500 dark:text-slate-600" />
                         </div>
-                        <h4 className="mb-2 text-lg font-semibold text-slate-300">No Storage Data</h4>
-                        <p className="max-w-sm text-sm text-slate-500">
+                        <h4 className="mb-2 text-lg font-semibold text-slate-700 dark:text-slate-300">No Storage Data</h4>
+                        <p className="max-w-sm text-sm text-slate-600 dark:text-slate-600 dark:text-slate-500">
                             Storage metrics will appear here once nodes begin reporting capacity data.
                         </p>
                     </div>
@@ -109,10 +109,10 @@ export function StorageCapacityGauge({ totalStorage, usedStorage, capacityTrend,
 
                                 {/* Center text */}
                                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <div className="text-4xl font-bold text-white">
+                                    <div className="text-4xl font-bold text-slate-900 dark:text-white">
                                         {formatPercentage(actualUsagePercent, { decimals: actualUsagePercent < 0.01 ? 4 : 2 })}
                                     </div>
-                                    <div className="text-xs text-slate-500">Used</div>
+                                    <div className="text-xs text-slate-400">Used</div>
                                 </div>
                             </div>
                         </div>
@@ -129,21 +129,21 @@ export function StorageCapacityGauge({ totalStorage, usedStorage, capacityTrend,
                             )}
 
                             <div>
-                                <div className="text-sm text-slate-500">Total Capacity</div>
+                                <div className="text-sm text-slate-400">Total Capacity</div>
                                 <div className="text-2xl font-bold text-slate-200">
                                     {formatBytes(totalStorage)}
                                 </div>
                             </div>
 
                             <div>
-                                <div className="text-sm text-slate-500">Used Storage</div>
+                                <div className="text-sm text-slate-400">Used Storage</div>
                                 <div className="text-2xl font-bold text-blue-400">
                                     {formatBytes(usedStorage)}
                                 </div>
                             </div>
 
                             <div>
-                                <div className="text-sm text-slate-500">Available</div>
+                                <div className="text-sm text-slate-400">Available</div>
                                 <div className="text-2xl font-bold text-emerald-400">
                                     {formatBytes(availableStorage)}
                                 </div>
@@ -160,7 +160,7 @@ export function StorageCapacityGauge({ totalStorage, usedStorage, capacityTrend,
                             {(!daysUntilFull || daysUntilFull > 36500) && usageTrend !== undefined && hasData && (
                                 <div className="mt-4 rounded-lg border border-slate-700 bg-slate-800/50 p-3">
                                     <div className="text-xs text-slate-400">Storage Usage Status</div>
-                                    <div className="text-sm font-semibold text-slate-300">
+                                    <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                                         {usageTrend > 0 ? 'Growing slowly' : usageTrend < 0 ? 'Usage decreasing' : 'Stable'}
                                     </div>
                                 </div>

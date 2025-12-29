@@ -20,7 +20,7 @@ export function NetworkGrowthChart({ history }: NetworkGrowthChartProps) {
     if (!history || history.length === 0) {
         return (
             <div className="flex h-full items-center justify-center rounded-2xl border border-slate-800 bg-slate-900/50 p-8">
-                <p className="text-slate-400">No history data available yet</p>
+                <p className="text-slate-600 dark:text-slate-600 dark:text-slate-400">No history data available yet</p>
             </div>
         );
     }
@@ -49,7 +49,7 @@ export function NetworkGrowthChart({ history }: NetworkGrowthChartProps) {
     const trend = firstValue > 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0;
 
     return (
-        <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-purple-950/20 p-8">
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-purple-950/20 p-8">
             {/* Background decoration */}
             <div className="absolute -left-8 -bottom-8 h-40 w-40 rounded-full bg-purple-500/5 blur-3xl" />
 
@@ -61,12 +61,12 @@ export function NetworkGrowthChart({ history }: NetworkGrowthChartProps) {
                         </div>
                         <div>
                             <h3 className="text-lg font-semibold text-slate-200">Network Growth</h3>
-                            <p className="text-sm text-slate-500">Total Committed Storage History</p>
+                            <p className="text-sm text-slate-400">Total Committed Storage History</p>
                         </div>
                     </div>
 
                     <div className={`flex items-center gap-1 rounded-lg px-3 py-1.5 ${trend > 0 ? 'bg-emerald-500/10 text-emerald-400' :
-                        trend < 0 ? 'bg-red-500/10 text-red-400' : 'bg-slate-800 text-slate-400'
+                        trend < 0 ? 'bg-red-500/10 text-red-400' : 'bg-slate-800 text-slate-600 dark:text-slate-400'
                         }`}>
                         <TrendingUp size={16} className={trend < 0 ? 'rotate-180' : ''} />
                         <span className="text-sm font-semibold">{trend > 0 ? '+' : ''}{trend.toFixed(1)}%</span>
@@ -76,14 +76,14 @@ export function NetworkGrowthChart({ history }: NetworkGrowthChartProps) {
                 {/* Stats Row */}
                 <div className="mb-6 grid grid-cols-2 gap-4">
                     <div>
-                        <div className="text-sm text-slate-500">Current Capacity</div>
-                        <div className="text-3xl font-bold text-white">
+                        <div className="text-sm text-slate-400">Current Capacity</div>
+                        <div className="text-3xl font-bold text-slate-900 dark:text-white">
                             {formatBytes(lastValue)}
                         </div>
                     </div>
 
                     <div>
-                        <div className="text-sm text-slate-500">Growth (Period)</div>
+                        <div className="text-sm text-slate-400">Growth (Period)</div>
                         <div className={`text-3xl font-bold ${trend >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                             {trend > 0 ? '+' : ''}{formatBytes(lastValue - firstValue)}
                         </div>
@@ -125,7 +125,7 @@ export function NetworkGrowthChart({ history }: NetworkGrowthChartProps) {
                                 }}
                                 labelStyle={{ color: '#cbd5e1' }}
                                 itemStyle={{ color: '#a855f7' }}
-                                formatter={(value: number) => [formatBytes(value), 'Committed Storage']}
+                                formatter={(value: number | undefined) => [formatBytes(value || 0), 'Committed Storage']}
                             />
                             <Area
                                 type="monotone"

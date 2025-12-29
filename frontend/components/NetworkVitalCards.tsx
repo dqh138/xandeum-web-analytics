@@ -7,9 +7,10 @@ interface NetworkVitalCardsProps {
     snapshot: any; // NetworkSnapshot
     previousSnapshot?: any; // For trend calculation
     loading?: boolean;
+    liveNodeCounts?: { online: number; total: number };
 }
 
-export function NetworkVitalCards({ snapshot, previousSnapshot, loading = false }: NetworkVitalCardsProps) {
+export function NetworkVitalCards({ snapshot, previousSnapshot, liveNodeCounts, loading = false }: NetworkVitalCardsProps) {
     if (loading || !snapshot) {
         return (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -37,9 +38,9 @@ export function NetworkVitalCards({ snapshot, previousSnapshot, loading = false 
     const healthColor = healthScore >= 80 ? 'green' : healthScore >= 50 ? 'orange' : 'red';
     const healthTrend = prevHealth ? healthScore - prevHealth.score : 0;
 
-    // Active Nodes logic
-    const activeNodes = nodes?.online || 0;
-    const totalNodes = nodes?.total || 0;
+    // Active Nodes logic (Prefer Live Counts if available)
+    const activeNodes = liveNodeCounts ? liveNodeCounts.online : (nodes?.online || 0);
+    const totalNodes = liveNodeCounts ? liveNodeCounts.total : (nodes?.total || 0);
     const activePercent = totalNodes > 0 ? (activeNodes / totalNodes) * 100 : 0;
     const nodesTrend = prevNodes ? ((activeNodes - prevNodes.online) / prevNodes.online) * 100 : 0; // Check logic
 

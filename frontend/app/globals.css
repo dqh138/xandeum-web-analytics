@@ -4,33 +4,119 @@
   --font-sans: var(--font-inter);
 }
 
+/* Define 'dark' variant for class-based dark mode */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ===== THEME VARIABLES ===== */
+
 :root {
-  --background: #0f172a;
-  --foreground: #f8fafc;
+  /* Default (Light) - kept for reference, but overridden by .dark if applied */
+  --background: #ffffff;
+  --background-secondary: #f8fafc;
+  --background-tertiary: #e2e8f0;
+  
+  --foreground: #0f172a;
+  --foreground-secondary: #334155;
+  --foreground-muted: #64748b;
+  
+  --border: #e2e8f0;
+  --border-light: #cbd5e1;
+  
+  --card-bg: rgba(255, 255, 255, 0.8);
+  --card-border: #e2e8f0;
+  --card-hover: rgba(248, 250, 252, 0.9);
+  
+  --accent-blue: #2563eb;
+  --accent-blue-hover: #1d4ed8;
+  --accent-emerald: #059669;
+  --accent-yellow: #d97706;
+  --accent-red: #dc2626;
+  
+  --scrollbar-track: #f1f5f9;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
 }
 
+.dark {
+  /* Dark Mode Variables */
+  --background: #0f172a;
+  --background-secondary: #1e293b;
+  --background-tertiary: #334155;
+  
+  --foreground: #f8fafc;
+  --foreground-secondary: #cbd5e1;
+  --foreground-muted: #94a3b8;
+  
+  --border: #334155;
+  --border-light: #475569;
+  
+  --card-bg: rgba(30, 41, 59, 0.5);
+  --card-border: #334155;
+  --card-hover: rgba(51, 65, 85, 0.5);
+  
+  --accent-blue: #3b82f6;
+  --accent-blue-hover: #2563eb;
+  --accent-emerald: #10b981;
+  --accent-yellow: #f59e0b;
+  --accent-red: #ef4444;
+  
+  --scrollbar-track: #1e293b;
+  --scrollbar-thumb: #475569;
+  --scrollbar-thumb-hover: #64748b;
+}
+
+/* ===== GLOBAL STYLES ===== */
+
 body {
-  background: radial-gradient(circle at top center, #1e293b, #0f172a);
+  background: var(--background);
   color: var(--foreground);
   min-height: 100vh;
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-/* Custom Scrollbar */
+/* Gradient backgrounds */
+body {
+    background: radial-gradient(circle at top center, #f1f5f9, var(--background));
+}
+
+.dark body {
+    background: radial-gradient(circle at top center, var(--background-secondary), var(--background));
+}
+
+/* ===== CUSTOM SCROLLBAR ===== */
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: var(--scrollbar-track);
   border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #475569;
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Global scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }

@@ -28,16 +28,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark">
+      <head>
+        <meta name="theme-color" content="#0f172a" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        suppressHydrationWarning
       >
         <SidebarProvider>
           <ToastProvider>
+            <Navigation />
             <GlobalShortcuts />
             {children}
-            <Navigation />
           </ToastProvider>
         </SidebarProvider>
       </body>

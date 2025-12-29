@@ -19,18 +19,18 @@ interface StorageTrendsChartProps {
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
         return (
-            <div className="rounded-lg border border-slate-700 bg-slate-900/95 p-3 shadow-xl backdrop-blur-md">
-                <p className="mb-2 text-xs font-medium text-slate-400">{label}</p>
+            <div className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 p-3 shadow-xl backdrop-blur-md">
+                <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-600 dark:text-slate-400">{label}</p>
                 {payload.map((entry: any, index: number) => (
                     <div key={index} className="flex items-center gap-2 text-sm">
                         <div
                             className="h-2 w-2 rounded-full"
                             style={{ backgroundColor: entry.color }}
                         />
-                        <span className="text-slate-300">
+                        <span className="text-slate-700 dark:text-slate-300">
                             {entry.name}:
                         </span>
-                        <span className="font-mono font-bold text-white">
+                        <span className="font-mono font-bold text-slate-900 dark:text-white">
                             {formatBytes(entry.value)}
                         </span>
                     </div>
@@ -45,7 +45,7 @@ export function StorageTrendsChart({ history }: StorageTrendsChartProps) {
     if (!history || history.length === 0) {
         return (
             <div className="flex h-[300px] items-center justify-center rounded-2xl border border-slate-800 bg-slate-900/50 p-8">
-                <p className="text-slate-400">No history data available yet</p>
+                <p className="text-slate-600 dark:text-slate-600 dark:text-slate-400">No history data available yet</p>
             </div>
         );
     }
@@ -73,8 +73,8 @@ export function StorageTrendsChart({ history }: StorageTrendsChartProps) {
         <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
             <div className="mb-6 flex items-center justify-between">
                 <div>
-                    <h2 className="text-xl font-semibold text-white">Storage Trends</h2>
-                    <p className="text-sm text-slate-400">Committed Capacity vs Used Storage over time</p>
+                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Storage Trends</h2>
+                    <p className="text-sm text-slate-600 dark:text-slate-600 dark:text-slate-400">Committed Capacity vs Used Storage over time</p>
                 </div>
             </div>
 

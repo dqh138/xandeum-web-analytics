@@ -43,14 +43,14 @@ export function EventsFeed({ events }: EventsFeedProps) {
 
             <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                 {events.length === 0 ? (
-                    <p className="text-sm text-slate-500">No recent activity.</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-600 dark:text-slate-500">No recent activity.</p>
                 ) : (
                     events.map((event) => (
                         <div key={event.event_id} className="flex gap-3 text-sm">
                             <div className="mt-0.5">{getIcon(event.severity)}</div>
                             <div className="flex-1">
-                                <p className="text-slate-300">{event.details.message}</p>
-                                <div className="mt-1 flex gap-2 text-xs text-slate-500">
+                                <p className="text-slate-700 dark:text-slate-300">{event.details.message}</p>
+                                <div className="mt-1 flex gap-2 text-xs text-slate-600 dark:text-slate-600 dark:text-slate-500">
                                     <span suppressHydrationWarning>{formatTime(event.timestamp)}</span>
                                     <span>•</span>
                                     <span className="uppercase">{event.category}</span>

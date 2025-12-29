@@ -1,9 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 // @ts-ignore
-import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
+import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps';
 import { scaleLinear } from 'd3-scale';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Minus, Maximize, Map as MapIcon, Globe } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Node {
     node_id: string;
@@ -14,6 +17,7 @@ interface Node {
         city?: string;
         country?: string;
     };
+    storage_capacity?: number; // Assumed available or 0
 }
 
 interface GeoMapProps {
@@ -23,15 +27,20 @@ interface GeoMapProps {
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
 export function GeoMap({ nodes }: GeoMapProps) {
+    const [position, setPosition] = useState({ coordinates: [0, 20], zoom: 1 });
+    const [tooltipContent, setTooltipContent] = useState<{ x: number, y: number, data: any } | null>(null);
+
+    // Group nodes by location
     const groupedNodes = useMemo(() => {
-        const groups: Record<string, { lat: number; lng: number; count: number; active: number; id: string }> = {};
+        const groups: Record<string, { lat: number; lng: number; count: number; active: number; id: string; country: string; city: string }> = {};
 
         nodes.forEach(node => {
-            // Default to 0,0 if missing (should filter out before but just safely handle)
             if (!node.geo?.latitude || !node.geo?.longitude) return;
 
-            // Key by city if available, otherwise round coordinates to group nearby
-            const key = node.geo.city || `${node.geo.latitude.toFixed(1)},${node.geo.longitude.toFixed(1)}`;
+            // Group close coordinates significantly to avoid clutter
+            const latKey = Math.round(node.geo.latitude * 2) / 2;
+            const lngKey = Math.round(node.geo.longitude * 2) / 2;
+            const key = node.geo.city ? `${node.geo.city}-${node.geo.country}` : `${latKey},${lngKey}`;
 
             if (!groups[key]) {
                 groups[key] = {
@@ -39,7 +48,9 @@ export function GeoMap({ nodes }: GeoMapProps) {
                     lng: node.geo.longitude,
                     count: 0,
                     active: 0,
-                    id: key
+                    id: key,
+                    country: node.geo.country || 'Unknown',
+                    city: node.geo.city || 'Unknown Location'
                 };
             }
             groups[key].count++;
@@ -49,99 +60,197 @@ export function GeoMap({ nodes }: GeoMapProps) {
         return Object.values(groups).sort((a, b) => b.count - a.count);
     }, [nodes]);
 
+    // Calculate Top Regions for Overlay (Active Nodes Only)
+    const topRegions = useMemo(() => {
+        const countryCounts: Record<string, number> = {};
+        nodes.forEach(n => {
+            if (n.status !== 'online') return; // Only count Active Nodes
+            const c = n.geo?.country || 'Unknown';
+            countryCounts[c] = (countryCounts[c] || 0) + 1;
+        });
+        return Object.entries(countryCounts)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 5)
+            .map(([country, count]) => ({ country, count }));
+    }, [nodes]);
+
     const maxCount = Math.max(...groupedNodes.map(g => g.count), 1);
-    const sizeScale = scaleLinear().domain([1, maxCount]).range([8, 32]); // Bubble size
+    const sizeScale = scaleLinear().domain([1, maxCount]).range([4, 12]);
 
+    const handleZoomIn = () => {
+        if (position.zoom >= 4) return;
+        setPosition(pos => ({ ...pos, zoom: pos.zoom * 1.5 }));
+    };
 
+    const handleZoomOut = () => {
+        if (position.zoom <= 1) return;
+        setPosition(pos => ({ ...pos, zoom: pos.zoom / 1.5 }));
+    };
 
-    const totalCountries = new Set(nodes.map(n => n.geo?.country).filter(Boolean)).size;
-    const totalActive = nodes.filter(n => n.status === 'online').length;
-    // If no geo nodes, just show totalNodes
-    const displayedNodesCount = nodes.filter(n => n.geo?.latitude).length;
+    const handleReset = () => {
+        setPosition({ coordinates: [0, 20], zoom: 1 });
+    };
 
     return (
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
-            <div className="mb-8 flex items-start justify-between">
-                <div>
-                    <h3 className="text-lg font-semibold text-white">Global Node Distribution</h3>
-                    <p className="mt-1 text-sm text-slate-400">
-                        {displayedNodesCount} nodes in {totalCountries} countries
-                    </p>
+        <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl h-full">
+            {/* Header / Insight Overlay Left */}
+            <div className="absolute left-6 top-6 z-10 pointer-events-none">
+                <div className="flex items-center gap-2 mb-4 pointer-events-auto">
+                    <div className="bg-blue-500/20 p-2 rounded-lg backdrop-blur-md border border-blue-500/30">
+                        <Globe className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-bold text-white tracking-wide">Global Intelligence</h3>
+                        <p className="text-xs text-blue-300/80 font-mono">LIVE NETWORK TOPOLOGY</p>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <span className="relative flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                    </span>
-                    <span className="text-sm font-medium text-slate-300">{totalActive} active</span>
+
+                {/* Top Regions List */}
+                <div className="space-y-2 pointer-events-auto">
+                    {topRegions.map((region, idx) => (
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.1 }}
+                            key={region.country}
+                            className="flex items-center gap-3 bg-slate-900/80 backdrop-blur-sm border border-slate-800 p-2 rounded-lg text-xs hover:border-blue-500/50 transition-colors w-48"
+                        >
+                            <span className="font-mono text-slate-400 w-4">#{idx + 1}</span>
+                            <span className="flex-1 text-white truncate font-medium">{region.country}</span>
+                            <span className="font-bold text-emerald-400">{region.count}</span>
+                        </motion.div>
+                    ))}
                 </div>
             </div>
 
-            <div className="relative h-[480px] w-full overflow-hidden rounded-lg bg-[#0B1121]">
+            {/* Controls Overlay Right */}
+            <div className="absolute right-6 bottom-16 z-10 flex flex-col gap-2">
+                <button
+                    onClick={handleZoomIn}
+                    className="p-2 bg-slate-900/90 border border-slate-700 text-slate-300 rounded-lg hover:bg-slate-800 hover:text-white transition-colors"
+                    aria-label="Zoom In"
+                >
+                    <Plus size={18} />
+                </button>
+                <button
+                    onClick={handleZoomOut}
+                    className="p-2 bg-slate-900/90 border border-slate-700 text-slate-300 rounded-lg hover:bg-slate-800 hover:text-white transition-colors"
+                    aria-label="Zoom Out"
+                >
+                    <Minus size={18} />
+                </button>
+                <button
+                    onClick={handleReset}
+                    className="p-2 bg-slate-900/90 border border-slate-700 text-slate-300 rounded-lg hover:bg-slate-800 hover:text-white transition-colors"
+                    aria-label="Reset View"
+                >
+                    <Maximize size={18} />
+                </button>
+            </div>
+
+            {/* Map Container */}
+            <div className="h-full w-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-[#0B1121] to-[#020617]">
                 <ComposableMap
                     projection="geoMercator"
-                    projectionConfig={{
-                        scale: 150,
-                        center: [0, 20]
-                    }}
+                    projectionConfig={{ scale: 150 }}
                     style={{ width: "100%", height: "100%" }}
                 >
-                    <Geographies geography={geoUrl}>
-                        {({ geographies }: { geographies: any[] }) =>
-                            geographies.map((geo) => (
-                                <Geography
-                                    key={geo.rsmKey}
-                                    geography={geo}
-                                    fill="#1e293b"
-                                    stroke="#0f172a"
-                                    strokeWidth={0.5}
-                                    style={{
-                                        default: { outline: "none" },
-                                        hover: { fill: "#1e293b", outline: "none" },
-                                        pressed: { outline: "none" },
-                                    }}
-                                />
-                            ))
-                        }
-                    </Geographies>
+                    <ZoomableGroup
+                        zoom={position.zoom}
+                        center={position.coordinates as [number, number]}
+                        onMoveEnd={(pos: { coordinates: [number, number], zoom: number }) => setPosition(pos)}
+                    >
+                        <Geographies geography={geoUrl}>
+                            {({ geographies }: { geographies: any[] }) =>
+                                geographies.map((geo: any) => (
+                                    <Geography
+                                        key={geo.rsmKey}
+                                        geography={geo}
+                                        fill="#1e293b"
+                                        stroke="#334155"
+                                        strokeWidth={0.5}
+                                        style={{
+                                            default: { fill: "#1e293b", outline: "none" },
+                                            hover: { fill: "#334155", stroke: "#60a5fa", strokeWidth: 1, outline: "none" },
+                                            pressed: { fill: "#0f172a", outline: "none" },
+                                        }}
+                                    />
+                                ))
+                            }
+                        </Geographies>
 
-                    {/* Arcs/Lines */}
+                        {/* Connection Lines (Cosmetic) */}
+                        {/* Could be added here for decorative network effects */}
 
+                        {/* Markers */}
+                        {groupedNodes.map((group) => {
+                            const size = sizeScale(group.count);
+                            const isLarge = group.count > 5;
+                            const mainColor = group.active > 0 ? "#10b981" : "#ef4444"; // Emerald or Red
 
-                    {/* Node Bubbles */}
-                    {groupedNodes.map((group) => (
-                        <Marker key={group.id} coordinates={[group.lng, group.lat]}>
-                            <circle
-                                r={sizeScale(group.count)}
-                                stroke="#0f172a"
-                                strokeWidth={0.5}
-                                className="origin-center transition-all duration-300 fill-emerald-500 hover:fill-emerald-400 hover:scale-110"
-                            />
-                            {/* Inner text for count if > 1 */}
-                            {group.count >= 1 && (
-                                <text
-                                    textAnchor="middle"
-                                    y={sizeScale(group.count) > 8 ? 4 : 3}
-                                    style={{
-                                        fontFamily: "system-ui",
-                                        fontSize: sizeScale(group.count) > 8 ? "10px" : "8px",
-                                        fill: "white",
-                                        pointerEvents: "none",
-                                        fontWeight: "bold"
+                            return (
+                                <Marker
+                                    key={group.id}
+                                    coordinates={[group.lng, group.lat]}
+                                    onMouseEnter={(e: any) => {
+                                        // Tooltip logic
+                                        // Simple approximation or parent relative
                                     }}
                                 >
-                                    {group.count}
-                                </text>
-                            )}
+                                    <g className="group cursor-pointer">
+                                        {/* Ripple / Pulse Effect */}
+                                        <circle
+                                            r={size * 2}
+                                            fill={mainColor}
+                                            opacity={0.2}
+                                            className="animate-ping"
+                                            style={{ animationDuration: `${2 + Math.random()}s` }}
+                                        />
 
-                        </Marker>
-                    ))}
+                                        {/* Outer Glow */}
+                                        <circle
+                                            r={size * 1.5}
+                                            fill={mainColor}
+                                            opacity={0.15}
+                                            className="group-hover:opacity-30 transition-opacity"
+                                        />
+
+                                        {/* Core */}
+                                        <circle
+                                            r={size}
+                                            fill={mainColor}
+                                            stroke="#0f172a"
+                                            strokeWidth={1}
+                                            className="transition-all duration-300 group-hover:scale-125"
+                                        />
+
+                                        {/* Tooltip on Hover */}
+                                        <title>{`${group.city}, ${group.country}\nNodes: ${group.count}\nActive: ${group.active}`}</title>
+                                    </g>
+                                </Marker>
+                            );
+                        })}
+                    </ZoomableGroup>
                 </ComposableMap>
             </div>
 
-            <div className="mt-4 flex justify-end">
-                <div className="px-3 py-1 rounded-md border border-emerald-900/30 text-xs text-emerald-400 bg-emerald-950/30">
-                    ● Active nodes
+            {/* Legend / Status Bar */}
+            <div className="absolute bottom-0 left-0 right-0 border-t border-slate-800 bg-slate-900/80 backdrop-blur-md px-6 py-3 flex items-center justify-between text-xs text-slate-400">
+                <div className="flex gap-6">
+                    <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                        <span className="text-slate-300">Live Nodes</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                        <span className="text-slate-300">Offline</span>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2 font-mono">
+                    <MapIcon size={14} className="text-slate-500" />
+                    <span>PROJ: MERCATOR</span>
+                    <span className="text-slate-600">|</span>
+                    <span>SCALE: 1:150M</span>
                 </div>
             </div>
         </div>

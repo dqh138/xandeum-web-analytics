@@ -66,15 +66,15 @@ export function GlobalShortcuts() {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl"
+                        className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 shadow-2xl"
                     >
-                        <div className="flex items-center justify-between border-b border-slate-800 p-4">
-                            <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
+                        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 p-4">
+                            <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
                                 <Keyboard className="text-blue-400" /> Keyboard Shortcuts
                             </h2>
                             <button
                                 onClick={() => setIsOpen(false)}
-                                className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+                                className="rounded-lg p-1 text-slate-600 dark:text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-800 hover:text-slate-900 dark:text-white"
                             >
                                 <X size={20} />
                             </button>
@@ -85,24 +85,24 @@ export function GlobalShortcuts() {
                             <ShortcutItem keys={['/']} description="Focus search input" />
                             <ShortcutItem keys={['Esc']} description="Close modals or clear selection" />
 
-                            <div className="mt-6 pt-4 border-t border-slate-800">
-                                <h3 className="text-xs font-semibold uppercase text-slate-500 mb-3">Navigation</h3>
+                            <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800">
+                                <h3 className="text-xs font-semibold uppercase text-slate-600 dark:text-slate-600 dark:text-slate-500 mb-3">Navigation</h3>
                                 <div className="grid grid-cols-2 gap-2">
-                                    <div className="flex items-center gap-2 text-sm text-slate-300">
-                                        <Command size={14} /> + <span className="font-mono bg-slate-800 px-1.5 py-0.5 rounded text-xs">L</span> Leaderboard
+                                    <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                                        <Command size={14} /> + <span className="font-mono bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-xs">L</span> Leaderboard
                                     </div>
-                                    <div className="flex items-center gap-2 text-sm text-slate-300">
-                                        <Command size={14} /> + <span className="font-mono bg-slate-800 px-1.5 py-0.5 rounded text-xs">S</span> Storage
+                                    <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                                        <Command size={14} /> + <span className="font-mono bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-xs">S</span> Storage
                                     </div>
-                                    <div className="flex items-center gap-2 text-sm text-slate-300">
-                                        <Command size={14} /> + <span className="font-mono bg-slate-800 px-1.5 py-0.5 rounded text-xs">H</span> Health
+                                    <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                                        <Command size={14} /> + <span className="font-mono bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-xs">H</span> Health
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-slate-950 p-4 text-center text-xs text-slate-500">
-                            Press '?' anytime to see this list.
+                        <div className="bg-slate-950 p-4 text-center text-xs text-slate-600 dark:text-slate-600 dark:text-slate-500">
+                            Press &apos;?&apos; anytime to see this list.
                         </div>
                     </motion.div>
                 </div>
@@ -114,12 +114,12 @@ export function GlobalShortcuts() {
 function ShortcutItem({ keys, description }: { keys: string[]; description: string }) {
     return (
         <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-300">{description}</span>
+            <span className="text-sm text-slate-700 dark:text-slate-300">{description}</span>
             <div className="flex gap-2">
                 {keys.map((k) => (
                     <kbd
                         key={k}
-                        className="min-w-[24px] rounded bg-slate-800 px-2 py-1 text-center font-mono text-xs font-bold text-slate-200 shadow-sm border border-slate-700"
+                        className="min-w-[24px] rounded bg-slate-200 dark:bg-slate-800 px-2 py-1 text-center font-mono text-xs font-bold text-slate-200 shadow-sm border border-slate-300 dark:border-slate-700"
                     >
                         {k}
                     </kbd>

@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebar } from '@/context/SidebarContext';
 import { useStarredNodes } from '@/hooks/useStarredNodes';
 
+
 const navItems = [
     { href: '/', label: 'Overview', icon: Home },
     { href: '/storage', label: 'Storage', icon: HardDrive },
@@ -26,7 +27,7 @@ export function Navigation() {
 
     return (
         <motion.nav
-            className="fixed left-0 top-0 z-50 h-screen border-r border-slate-800 bg-slate-900/95 p-4 backdrop-blur-md hidden lg:flex flex-col"
+            className="fixed left-0 top-0 z-50 h-screen border-r border-slate-800 bg-white/95 dark:bg-slate-900/95 p-4 backdrop-blur-md hidden lg:flex flex-col"
             initial={false}
             animate={{ width: isCollapsed ? 80 : 256 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -44,7 +45,7 @@ export function Navigation() {
                                 <h1 className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-xl font-bold text-transparent whitespace-nowrap">
                                     Xandeum
                                 </h1>
-                                <p className="text-xs text-slate-500 whitespace-nowrap">Analytics Dashboard</p>
+                                <p className="text-xs text-slate-400 whitespace-nowrap">Analytics Dashboard</p>
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -52,7 +53,7 @@ export function Navigation() {
                     <button
                         onClick={toggleSidebar}
                         className={cn(
-                            "rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors",
+                            "rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors",
                             isCollapsed ? "mx-auto" : "ml-auto"
                         )}
                     >
@@ -71,13 +72,13 @@ export function Navigation() {
                                     "group flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-all relative",
                                     isActive
                                         ? "bg-blue-500/10 text-blue-400"
-                                        : "text-slate-400 hover:bg-slate-800 hover:text-slate-200",
+                                        : "text-slate-400 hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200",
                                     isCollapsed && "justify-center"
                                 )}
                                 title={isCollapsed ? label : undefined}
                             >
                                 <div className="relative">
-                                    <Icon size={20} className={cn(isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300")} />
+                                    <Icon size={20} className={cn(isActive ? "text-blue-400" : "text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300")} />
                                     {label === 'Starred' && starredIds.length > 0 && (
                                         <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
                                             {starredIds.length}
@@ -110,7 +111,10 @@ export function Navigation() {
                     })}
                 </div>
 
-                <div className="mt-auto px-1">
+                <div className="mt-auto space-y-3 px-1">
+
+
+                    {/* System Status */}
                     <div className={cn("rounded-lg bg-slate-800/50 p-4", isCollapsed && "p-2 bg-transparent text-center")}>
                         <AnimatePresence>
                             {!isCollapsed && (

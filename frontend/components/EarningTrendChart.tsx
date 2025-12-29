@@ -21,7 +21,7 @@ export function EarningTrendChart({ data }: EarningTrendChartProps) {
         : 0;
 
     return (
-        <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/20 p-8">
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/20 p-8">
             {/* Background decoration */}
             <div className="absolute -left-8 -bottom-8 h-40 w-40 rounded-full bg-emerald-500/5 blur-3xl" />
 
@@ -33,7 +33,7 @@ export function EarningTrendChart({ data }: EarningTrendChartProps) {
                         </div>
                         <div>
                             <h3 className="text-lg font-semibold text-slate-200">Network Earnings</h3>
-                            <p className="text-sm text-slate-500">30-day reward distribution</p>
+                            <p className="text-sm text-slate-600 dark:text-slate-600 dark:text-slate-500">30-day reward distribution</p>
                         </div>
                     </div>
 
@@ -47,18 +47,18 @@ export function EarningTrendChart({ data }: EarningTrendChartProps) {
                 {/* Stats Row */}
                 <div className="mb-6 grid grid-cols-2 gap-4">
                     <div>
-                        <div className="text-sm text-slate-500">Total Distributed</div>
-                        <div className="text-3xl font-bold text-white">
+                        <div className="text-sm text-slate-600 dark:text-slate-600 dark:text-slate-500">Total Distributed</div>
+                        <div className="text-3xl font-bold text-slate-900 dark:text-white">
                             {totalRewards.toLocaleString()}
-                            <span className="ml-2 text-lg text-slate-500">XAND</span>
+                            <span className="ml-2 text-lg text-slate-600 dark:text-slate-600 dark:text-slate-500">XAND</span>
                         </div>
                     </div>
 
                     <div>
-                        <div className="text-sm text-slate-500">Daily Average</div>
+                        <div className="text-sm text-slate-600 dark:text-slate-600 dark:text-slate-500">Daily Average</div>
                         <div className="text-3xl font-bold text-emerald-400">
                             {avgRewards.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                            <span className="ml-2 text-lg text-slate-500">XAND</span>
+                            <span className="ml-2 text-lg text-slate-600 dark:text-slate-600 dark:text-slate-500">XAND</span>
                         </div>
                     </div>
                 </div>

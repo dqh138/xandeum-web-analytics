@@ -25,9 +25,9 @@ export function SystemStatusBadge({ status, lastUpdated, message }: SystemStatus
         </span>
       </div>
 
-      <div className="h-3 w-px bg-slate-800" />
+      <div className="h-3 w-px bg-slate-200 dark:bg-slate-800" />
 
-      <div className="text-xs text-slate-400">
+      <div className="text-xs text-slate-600 dark:text-slate-600 dark:text-slate-400">
         Updated: <span className="text-slate-200" suppressHydrationWarning>{lastUpdated}</span>
       </div>
     </div>

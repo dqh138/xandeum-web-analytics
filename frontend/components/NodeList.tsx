@@ -53,12 +53,12 @@ export function NodeList({ nodes }: NodeListProps) {
         <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2">
           <Server className="text-blue-400" />
           Network Nodes
-          <span className="ml-2 rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-400">
+          <span className="ml-2 rounded-full bg-slate-200 dark:bg-slate-800 px-2 py-0.5 text-xs text-slate-600 dark:text-slate-600 dark:text-slate-400">
             {onlineNodes.length} Online
           </span>
         </h2>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600 dark:text-slate-600 dark:text-slate-500" />
           <input
             type="text"
             placeholder="Search nodes..."
@@ -102,7 +102,7 @@ export function NodeList({ nodes }: NodeListProps) {
                 </div>
               </div>
 
-              <div className="space-y-2 text-sm text-slate-400">
+              <div className="space-y-2 text-sm text-slate-600 dark:text-slate-600 dark:text-slate-400">
                 <div className="flex justify-between">
                   <span>Address:</span>
                   <span className="font-mono text-slate-200">{node.address}</span>
@@ -113,7 +113,7 @@ export function NodeList({ nodes }: NodeListProps) {
                 </div>
                 <div className="flex justify-between">
                   <span>Version:</span>
-                  <span className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-xs text-slate-300">
+                  <span className="rounded bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 font-mono text-xs text-slate-700 dark:text-slate-300">
                     {node.version}
                   </span>
                 </div>
@@ -136,8 +136,8 @@ export function NodeList({ nodes }: NodeListProps) {
           No online nodes found matching your search.
         </div>
       ) : (
-        <div className="flex items-center justify-between border-t border-slate-800 pt-4">
-          <div className="text-sm text-slate-400">
+        <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 pt-4">
+          <div className="text-sm text-slate-600 dark:text-slate-600 dark:text-slate-400">
             Showing <span className="font-medium text-slate-200">{startIndex + 1}</span> to{' '}
             <span className="font-medium text-slate-200">
               {Math.min(startIndex + itemsPerPage, filteredNodes.length)}
@@ -148,17 +148,17 @@ export function NodeList({ nodes }: NodeListProps) {
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="rounded-lg border border-slate-700 p-2 text-slate-400 hover:bg-slate-800 disabled:opacity-50 disabled:hover:bg-transparent"
+              className="rounded-lg border border-slate-300 dark:border-slate-700 p-2 text-slate-600 dark:text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-800 disabled:opacity-50 disabled:hover:bg-transparent"
             >
               <ChevronLeft size={16} />
             </button>
-            <span className="text-sm text-slate-400">
+            <span className="text-sm text-slate-600 dark:text-slate-600 dark:text-slate-400">
               Page {currentPage} of {totalPages}
             </span>
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="rounded-lg border border-slate-700 p-2 text-slate-400 hover:bg-slate-800 disabled:opacity-50 disabled:hover:bg-transparent"
+              className="rounded-lg border border-slate-300 dark:border-slate-700 p-2 text-slate-600 dark:text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-800 disabled:opacity-50 disabled:hover:bg-transparent"
             >
               <ChevronRight size={16} />
             </button>
